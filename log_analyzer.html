@@ -566,6 +566,11 @@
                 </ul>
             </div>
 
+            <div class="warning-box" style="background:#e7f3ff;border-color:#0066cc;color:#003366;">
+                📌 <strong>重要提示：</strong>日志前缀（时间戳、进程ID、模块名等）会自动被忽略，不会参与重复度计算。
+                <br>如果您的日志格式特殊，请在高级设置中配置"忽略前缀模式"。
+            </div>
+
             <span class="settings-toggle" id="settingsToggle">⚙️ 高级设置</span>
             <div class="settings-panel" id="settingsPanel">
                 <div class="input-group">
@@ -579,10 +584,22 @@
                     </select>
                 </div>
                 <div class="input-group">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="ignoreTimestamp" checked>
-                        <label for="ignoreTimestamp">忽略时间戳（识别相似日志内容）</label>
+                    <label>📝 日志前缀忽略模式（正则表达式）</label>
+                    <input type="text" id="ignorePrefixPattern" placeholder="例如: ^\[[^\]]+\]\[[^\]]+\]\[[^\]]+\]\[[^\]]+\]\[[^\]]+\]">
+                    <div style="font-size:11px;color:#666;margin-top:5px;">
+                        💡 用于匹配并移除日志行的前缀部分（如时间戳、进程ID等），匹配到的内容将被移除后再进行重复度计算。
+                        <br>留空则使用自动检测的默认格式：<code style="background:#eee;padding:2px 4px;border-radius:3px;">^\[[^\]]+\]\[[^\]]+\]\[[^\]]+\]\[[^\]]+->[^\]]+@\d+@\w+\]:</code>
                     </div>
+                </div>
+                <div class="input-group">
+                    <label>🔧 常用日志格式预设</label>
+                    <select id="logFormatPreset" style="width:100%;padding:8px;border:2px solid #ddd;border-radius:6px;font-size:13px;">
+                        <option value="auto">自动检测（推荐）</option>
+                        <option value="iOA">iOA企业版格式</option>
+                        <option value="apache">Apache/Nginx格式</option>
+                        <option value="system">系统日志格式</option>
+                        <option value="custom">自定义</option>
+                    </select>
                 </div>
                 <div class="input-group">
                     <div class="checkbox-group">
@@ -707,6 +724,19 @@
         // 切换高级设置面板
         document.getElementById('settingsToggle').addEventListener('click', function() {
             document.getElementById('settingsPanel').classList.toggle('show');
+        });
+
+        // 日志格式预设切换
+        document.getElementById('logFormatPreset').addEventListener('change', function() {
+            const preset = this.value;
+            const patterns = {
+                'auto': '',
+                'iOA': '^\\[[^\\]]+\\]\\[[^\\]]+\\]\\[[^\\]]+\\]\\[[^\\]]+\\-\\>[^\\]]+@\\d+@\\w+\\]:',
+                'apache': '^\\[[^\\]]+\\] \\[[^\\]]+\\]',
+                'system': '^[A-Za-z]{3}\\s+\\d{1,2}\\s+\\d{2}:\\d{2}:\\d{2}\\s+',
+                'custom': ''
+            };
+            document.getElementById('ignorePrefixPattern').value = patterns[preset] || '';
         });
 
         // ============ 多种相似度算法实现 ============
@@ -875,6 +905,29 @@
 
         // 解析日志行，提取核心内容和元数据
         function parseLogLine(line) {
+            // 首先尝试用户自定义的忽略模式
+            const customPattern = document.getElementById('ignorePrefixPattern')?.value?.trim();
+            if (customPattern) {
+                try {
+                    const customRegex = new RegExp(customPattern);
+                    const customMatch = line.match(customRegex);
+                    if (customMatch) {
+                        return {
+                            content: line.substring(customMatch[0].length).trim(),
+                            rawPrefix: customMatch[0],
+                            level: '',
+                            timestamp: '',
+                            processInfo: '',
+                            module: '',
+                            sourceFile: '',
+                            lineNo: ''
+                        };
+                    }
+                } catch (e) {
+                    console.warn('自定义正则表达式错误，使用默认格式:', e.message);
+                }
+            }
+
             // 匹配日志前缀: [LEVEL][TIME][PID TID][MODULE->FILE@LINE]:
             const logPrefixRegex = /^\[(\w+)\]\[([^\]]+)\]\[([^\]]+)\]\[([^\]]+)->([^\]]+)@(\d+)@\w+\]:\s*(.*)$/;
             const match = line.match(logPrefixRegex);
@@ -1306,8 +1359,11 @@
             const parsed = parseLogLine(line);
             let normalized = parsed.content || line;
 
+            // 如果解析成功，说明前缀已经被移除，直接处理内容
+            // 否则使用原始行
+
             // 忽略数字（默认启用，因为日志通常包含变量数字）
-            if (document.getElementById('ignoreNumbers').checked) {
+            if (document.getElementById('ignoreNumbers')?.checked) {
                 normalized = normalized.replace(/\b\d+\b/g, '[NUM]');
             }
 
