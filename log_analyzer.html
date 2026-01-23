@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日志重复度分析工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #856404;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+        }
+
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-analyze {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-analyze:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-clear {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background: #ee5a5a;
+        }
+
+        .progress-section {
+            display: none;
+            margin: 25px 0;
+        }
+
+        .progress-bar-container {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 25px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s;
+            width: 0%;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .stats-section {
+            display: none;
+            background: #f0f7ff;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .results-header h2 {
+            color: #333;
+            font-size: 20px;
+        }
+
+        .filter-options {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .filter-options label {
+            margin-bottom: 0;
+            font-weight: normal;
+        }
+
+        .filter-options input[type="number"] {
+            width: 80px;
+            padding: 8px;
+        }
+
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .log-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        .log-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: top;
+        }
+
+        .log-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .rank {
+            width: 60px;
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .percentage {
+            width: 100px;
+            text-align: center;
+        }
+
+        .percentage-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .percentage-high {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .percentage-medium {
+            background: #ffa502;
+            color: white;
+        }
+
+        .percentage-low {
+            background: #20bf6b;
+            color: white;
+        }
+
+        .count {
+            width: 80px;
+            text-align: center;
+            color: #666;
+        }
+
+        .log-content {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 12px;
+            color: #333;
+            word-break: break-all;
+            line-height: 1.5;
+            max-width: 600px;
+        }
+
+        .sample-section {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .sample-title {
+            font-size: 11px;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .sample-item {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 11px;
+            color: #555;
+            padding: 6px 0;
+            border-bottom: 1px dashed #e0e0e0;
+            word-break: break-all;
+        }
+
+        .sample-item:last-child {
+            border-bottom: none;
+        }
+
+        .chart-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .bar-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .bar-label {
+            width: 60px;
+            font-size: 12px;
+            color: #666;
+            text-align: right;
+        }
+
+        .bar-wrapper {
+            flex: 1;
+            background: #e0e0e0;
+            border-radius: 4px;
+            height: 30px;
+            overflow: hidden;
+        }
+
+        .bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .export-btn {
+            background: #20bf6b;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .export-btn:hover {
+            background: #1ea864;
+        }
+
+        .error-message {
+            display: none;
+            background: #ffe6e6;
+            color: #d63031;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #d63031;
+        }
+
+        .settings-toggle {
+            cursor: pointer;
+            color: #667eea;
+            text-decoration: underline;
+            font-size: 14px;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        .settings-panel {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .settings-panel.show {
+            display: block;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 日志重复度分析工具</h1>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <label>📁 日志目录路径</label>
+                <input type="text" id="directoryInput" 
+                       placeholder="例如: G:\path\to\logs"
+                       value="G:\[________________]\DiagnosticLog-171-1766458290-sf\iOADiagnosisLog-Full-2025-12-23-10-52-51\diagnosis_export\ZtsmEnt">
+            </div>
+
+            <div class="input-group">
+                <label>🔍 日志文件匹配模式（支持通配符 * 和 ?）</label>
+                <input type="text" id="patternInput" 
+                       placeholder="例如: ZtsmEnt_*.log"
+                       value="ZtsmEnt_*.log">
+            </div>
+
+            <div class="warning-box">
+                ⚠️ <strong>性能提示：</strong>分析大文件（50MB+）需要一定时间，请耐心等待。如遇卡顿，请关闭"启用模糊匹配"选项。
+            </div>
+
+            <span class="settings-toggle" id="settingsToggle">⚙️ 高级设置</span>
+            <div class="settings-panel" id="settingsPanel">
+                <div class="input-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="ignoreTimestamp" checked>
+                        <label for="ignoreTimestamp">忽略时间戳（识别相似日志内容）</label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="ignoreNumbers" checked>
+                        <label for="ignoreNumbers">忽略数字（识别模板模板日志）</label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="useFuzzyMatch">
+                        <label for="useFuzzyMatch">启用模糊匹配（基于相似度聚合日志，较慢）</label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>相似度阈值（0-100，值越高要求越严格）</label>
+                    <input type="number" id="similarityThreshold" value="70" min="0" max="100">
+                </div>
+                <div class="input-group">
+                    <label>最小重复次数阈值</label>
+                    <input type="number" id="minRepeatCount" value="5" min="1">
+                </div>
+                <div class="input-group">
+                    <label>过滤过短日志（最小字符数）</label>
+                    <input type="number" id="minLineLength" value="20" min="1">
+                </div>
+                <div class="input-group">
+                    <label>每个日志组显示的随机样本数</label>
+                    <input type="number" id="sampleCount" value="3" min="1" max="10">
+                </div>
+            </div>
+
+            <div class="btn-container">
+                <button class="btn-analyze" id="analyzeBtn" onclick="analyzeLogs()">🔍 开始分析</button>
+                <button class="btn-clear" onclick="clearResults()">🗑️ 清空结果</button>
+            </div>
+        </div>
+
+        <div class="progress-section" id="progressSection">
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="progress-text" id="progressText">准备中...</div>
+        </div>
+
+        <div class="stats-section" id="statsSection">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalFiles">0</div>
+                    <div class="stat-label">分析文件数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalLines">0</div>
+                    <div class="stat-label">总日志行数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="uniqueLogs">0</div>
+                    <div class="stat-label">唯一日志数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="duplicateRate">0%</div>
+                    <div class="stat-label">重复率</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <h2>📋 重复日志分析结果</h2>
+                <div class="filter-options">
+                    <label>显示前</label>
+                    <input type="number" id="topN" value="20" min="1" max="1000">
+                    <label>条</label>
+                    <button class="export-btn" onclick="exportResults()">📥 导出CSV</button>
+                </div>
+            </div>
+
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th class="rank">排名</th>
+                        <th class="percentage">占比</th>
+                        <th class="count">重复次数</th>
+                        <th class="log-content">日志模板</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsTable">
+                </tbody>
+            </table>
+
+            <div class="chart-container">
+                <div class="chart-title">📈 TOP 10 重复日志分布</div>
+                <div class="bar-chart" id="barChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let analysisResults = [];
+        let isAnalyzing = false;
+
+        // 切换高级设置面板
+        document.getElementById('settingsToggle').addEventListener('click', function() {
+            document.getElementById('settingsPanel').classList.toggle('show');
+        });
+
+        // 计算编辑距离（Levenshtein距离）- 优化版本，限制最大长度
+        function levenshteinDistance(str1, str2) {
+            const len1 = str1.length;
+            const len2 = str2.length;
+
+            if (len1 === 0) return len2;
+            if (len2 === 0) return len1;
+
+            // 如果字符串太长，使用简化的比较
+            if (len1 > 500 || len2 > 500) {
+                return simpleDistance(str1, str2);
+            }
+
+            const matrix = [];
+
+            for (let i = 0; i <= len1; i++) {
+                matrix[i] = [i];
+            }
+
+            for (let j = 0; j <= len2; j++) {
+                matrix[0][j] = j;
+            }
+
+            for (let i = 1; i <= len1; i++) {
+                for (let j = 1; j <= len2; j++) {
+                    const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j] + 1,
+                        matrix[i][j - 1] + 1,
+                        matrix[i - 1][j - 1] + cost
+                    );
+                }
+            }
+
+            return matrix[len1][len2];
+        }
+
+        // 简化的距离计算（用于长字符串）
+        function simpleDistance(str1, str2) {
+            // 取前200和后200字符比较
+            const len1 = Math.min(str1.length, 200);
+            const len2 = Math.min(str2.length, 200);
+
+            const prefix1 = str1.substring(0, len1);
+            const prefix2 = str2.substring(0, len2);
+
+            // 使用简单的单词匹配
+            const words1 = new Set(prefix1.split(/\s+/).filter(w => w.length > 2));
+            const words2 = new Set(prefix2.split(/\s+/).filter(w => w.length > 2));
+
+            let common = 0;
+            words1.forEach(word => {
+                if (words2.has(word)) common++;
+            });
+
+            const total = Math.max(words1.size, words2.size);
+            if (total === 0) return 0;
+
+            return Math.floor((total - common) * 3);
+        }
+
+        // 计算相似度百分比
+        function calculateSimilarity(str1, str2) {
+            if (str1 === str2) return 100;
+            if (!str1 || !str2) return 0;
+
+            const maxLen = Math.max(str1.length, str2.length);
+            if (maxLen === 0) return 100;
+
+            const distance = levenshteinDistance(str1, str2);
+            const similarity = ((maxLen - distance) / maxLen) * 100;
+
+            return Math.max(0, Math.min(100, Math.round(similarity * 100) / 100));
+        }
+
+        // 检查是否是有效日志行（过滤掉只有符号的行）
+        function isValidLogLine(line) {
+            const minLineLength = parseInt(document.getElementById('minLineLength').value) || 10;
+            if (line.length < minLineLength) return false;
+
+            // 移除所有符号和空白
+            const stripped = line.replace(/[{}[\](),;:.\/\s\n\r\t]/g, '');
+            return stripped.length > 0;
+        }
+
+        // 流式读取文件内容，避免内存爆炸
+        async function* readFileInChunks(file, chunkSize = 1024 * 1024) { // 1MB chunks
+            const reader = file.stream().getReader();
+            let buffer = '';
+            let position = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const decoder = new TextDecoder('utf-8', { stream: true });
+                const chunk = buffer + decoder.decode(value, { stream: true });
+
+                // 按行分割
+                const lines = chunk.split('\n');
+                // 保留最后一行（可能不完整）
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    yield line;
+                }
+
+                position += value.length;
+            }
+
+            // 处理最后一行
+            if (buffer) {
+                yield buffer;
+            }
+        }
+
+        async function analyzeLogs() {
+            if (isAnalyzing) return;
+            isAnalyzing = true;
+
+            const directory = document.getElementById('directoryInput').value.trim();
+            const pattern = document.getElementById('patternInput').value.trim();
+
+            if (!directory) {
+                showError('请输入日志目录路径');
+                isAnalyzing = false;
+                return;
+            }
+
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = '⏳ 分析中...';
+
+            hideError();
+            showProgress();
+            updateProgress(0, '开始分析...');
+
+            try {
+                // 使用File System Access API选择目录
+                const dirHandle = await window.showDirectoryPicker({
+                    id: 'log-analyzer-dir',
+                    mode: 'read'
+                });
+
+                analysisResults = [];
+                let totalLines = 0;
+                let fileCount = 0;
+                const logMap = new Map(); // 存储规范化后的日志及其计数和样本
+                const useFuzzyMatch = document.getElementById('useFuzzyMatch').checked;
+                const similarityThreshold = parseInt(document.getElementById('similarityThreshold').value) || 70;
+
+                // 获取所有匹配的文件
+                const filesToProcess = [];
+                for await (const [name, handle] of dirHandle.entries()) {
+                    if (handle.kind === 'file' && matchPattern(name, pattern)) {
+                        filesToProcess.push({ name, handle });
+                    }
+                }
+                fileCount = filesToProcess.length;
+
+                // 流式处理每个文件
+                for (let fileIdx = 0; fileIdx < filesToProcess.length; fileIdx++) {
+                    const { name, handle } = filesToProcess[fileIdx];
+                    const fileProgress = 10 + (fileIdx / filesToProcess.length) * 35;
+                    updateProgress(fileProgress, `正在读取文件 (${fileIdx + 1}/${fileCount}): ${name}...`);
+
+                    const file = await handle.getFile();
+                    let lineCountInFile = 0;
+
+                    // 流式读取
+                    for await (const line of readFileInChunks(file)) {
+                        const trimmedLine = line.trim();
+                        if (trimmedLine && isValidLogLine(trimmedLine)) {
+                            totalLines++;
+                            lineCountInFile++;
+                            const normalizedLine = normalizeLine(trimmedLine);
+
+                            if (!logMap.has(normalizedLine)) {
+                                logMap.set(normalizedLine, {
+                                    count: 0,
+                                    samples: [] // 存储原始日志样本
+                                });
+                            }
+
+                            const logEntry = logMap.get(normalizedLine);
+                            logEntry.count++;
+
+                            // 只保存样本（限制内存）
+                            if (logEntry.samples.length < 10) {
+                                logEntry.samples.push(trimmedLine);
+                            }
+                        }
+
+                        // 每处理1000行释放一下主线程
+                        if (lineCountInFile % 1000 === 0) {
+                            await new Promise(resolve => setTimeout(resolve, 0));
+                        }
+                    }
+                }
+
+                updateProgress(50, `正在进行相似度分析...`);
+
+                let resultsArray;
+
+                if (useFuzzyMatch) {
+                    // 使用模糊匹配聚合相似日志（现在是异步函数）
+                    resultsArray = await groupSimilarLogs(Array.from(logMap.entries()), similarityThreshold);
+                } else {
+                    // 直接使用精确匹配结果
+                    resultsArray = Array.from(logMap.entries()).map(([content, data]) => ({
+                        content,
+                        count: data.count,
+                        samples: data.samples,
+                        isGroup: false
+                    }));
+                }
+
+                // 过滤最小重复次数
+                const minRepeatCount = parseInt(document.getElementById('minRepeatCount').value) || 5;
+                resultsArray = resultsArray.filter(item => item.count >= minRepeatCount);
+
+                // 排序
+                resultsArray.sort((a, b) => b.count - a.count);
+
+                analysisResults = resultsArray;
+
+                // 更新统计信息
+                updateStats(fileCount, totalLines, logMap.size, analysisResults);
+
+                // 显示结果
+                displayResults();
+                updateProgress(100, '分析完成！');
+
+            } catch (error) {
+                console.error('分析错误:', error);
+                showError('分析失败: ' + error.message);
+            } finally {
+                isAnalyzing = false;
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '🔍 开始分析';
+            }
+        }
+
+        // 使用模糊匹配聚合相似日志 - 优化性能
+        async function groupSimilarLogs(logs, threshold) {
+            const groups = [];
+            const used = new Set();
+
+            // 按出现次数排序，优先处理高频日志
+            const sortedLogs = logs.sort((a, b) => b[1].count - a[1].count);
+
+            // 性能优化：只对高频日志进行模糊匹配
+            const maxProcessCount = Math.min(sortedLogs.length, 2000);
+            const processLogs = sortedLogs.slice(0, maxProcessCount);
+
+            let processedCount = 0;
+            const totalToProcess = processLogs.length;
+
+            for (let i = 0; i < processLogs.length; i++) {
+                const idx = i;
+                if (used.has(idx)) continue;
+
+                const [content, data] = processLogs[idx];
+                let group = {
+                    content,
+                    count: data.count,
+                    samples: [...data.samples],
+                    similarCount: 0,
+                    isGroup: false
+                };
+
+                // 查找相似的日志 - 限制比较范围
+                const maxCompare = Math.min(processLogs.length, i + 500);
+                const similarLogs = [];
+
+                for (let j = i + 1; j < maxCompare; j++) {
+                    if (used.has(j)) continue;
+
+                    const [otherContent, otherData] = processLogs[j];
+
+                    // 快速过滤：长度差异太大直接跳过
+                    const lenDiff = Math.abs(content.length - otherContent.length);
+                    if (lenDiff > content.length * 0.3) continue;
+
+                    const similarity = calculateSimilarity(content, otherContent);
+
+                    if (similarity >= threshold) {
+                        similarLogs.push({ content: otherContent, data: otherData, idx: j });
+                    }
+                }
+
+                if (similarLogs.length > 0) {
+                    // 合并相似日志
+                    let totalCount = data.count;
+                    let allSamples = [...data.samples];
+
+                    similarLogs.forEach(item => {
+                        totalCount += item.data.count;
+                        allSamples = allSamples.concat(item.data.samples.slice(0, 5));
+                        used.add(item.idx);
+                        group.similarCount++;
+                    });
+
+                    group.count = totalCount;
+                    group.samples = allSamples;
+                    group.isGroup = true;
+                    group.content = `${content} (已聚合 ${group.similarCount + 1} 条相似日志)`;
+                }
+
+                groups.push(group);
+                used.add(idx);
+
+                // 定期更新进度
+                processedCount++;
+                if (processedCount % 50 === 0) {
+                    const progress = 50 + (processedCount / totalToProcess) * 45;
+                    updateProgress(Math.min(progress, 95), `正在进行相似度分析 (${processedCount}/${totalToProcess})...`);
+
+                    // 让UI有机会更新
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+            }
+
+            // 添加剩余的低频日志（不进行模糊匹配）
+            for (let i = maxProcessCount; i < sortedLogs.length; i++) {
+                if (!used.has(i)) {
+                    const [content, data] = sortedLogs[i];
+                    groups.push({
+                        content,
+                        count: data.count,
+                        samples: data.samples,
+                        isGroup: false
+                    });
+                }
+            }
+
+            return groups;
+        }
+
+        function matchPattern(filename, pattern) {
+            const regexPattern = pattern
+                .replace(/\./g, '\\.')
+                .replace(/\*/g, '.*')
+                .replace(/\?/g, '.');
+            const regex = new RegExp(`^${regexPattern}$`, 'i');
+            return regex.test(filename);
+        }
+
+        function normalizeLine(line) {
+            let normalized = line;
+
+            // 忽略时间戳
+            if (document.getElementById('ignoreTimestamp').checked) {
+                // 匹配常见的时间戳格式: 2024-12-23 10:52:51, [2024-12-23], 10:52:51 等
+                normalized = normalized.replace(
+                    /\d{4}[-/]\d{1,2}[-/]\d{1,2}[\sT]+\d{1,2}:\d{1,2}:\d{1,2}(?:\.\d+)?/g,
+                    '[TIMESTAMP]'
+                );
+                normalized = normalized.replace(/\[\d{4}-\d{1,2}-\d{1,2}\]/g, '[DATE]');
+                normalized = normalized.replace(/\d{1,2}:\d{1,2}:\d{1,2}(?:\.\d+)?/g, '[TIME]');
+            }
+
+            // 忽略数字
+            if (document.getElementById('ignoreNumbers').checked) {
+                normalized = normalized.replace(/\b\d+\b/g, '[NUM]');
+            }
+
+            // 移除UUID和哈希
+            normalized = normalized.replace(
+                /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+                '[UUID]'
+            );
+            normalized = normalized.replace(/[0-9a-f]{32,}/gi, '[HASH]');
+
+            return normalized.trim();
+        }
+
+        function updateStats(fileCount, totalLines, uniqueLogs, duplicates) {
+            document.getElementById('totalFiles').textContent = fileCount;
+            document.getElementById('totalLines').textContent = formatNumber(totalLines);
+            document.getElementById('uniqueLogs').textContent = formatNumber(uniqueLogs);
+
+            const duplicateCount = duplicates.reduce((sum, item) => sum + item.count, 0);
+            const duplicateRate = totalLines > 0 ? ((duplicateCount / totalLines) * 100).toFixed(2) : 0;
+            document.getElementById('duplicateRate').textContent = duplicateRate + '%';
+
+            document.getElementById('statsSection').style.display = 'block';
+        }
+
+        function displayResults() {
+            const topN = parseInt(document.getElementById('topN').value) || 20;
+            const topResults = analysisResults.slice(0, topN);
+            const totalLines = analysisResults.reduce((sum, item) => sum + item.count, 0);
+            const sampleCount = Math.min(parseInt(document.getElementById('sampleCount').value) || 3, 10);
+
+            const tableBody = document.getElementById('resultsTable');
+            tableBody.innerHTML = '';
+
+            topResults.forEach((item, index) => {
+                const percentage = totalLines > 0 ? ((item.count / totalLines) * 100).toFixed(2) : 0;
+                const row = document.createElement('tr');
+
+                const percentageClass = percentage >= 5 ? 'percentage-high' :
+                                       percentage >= 1 ? 'percentage-medium' : 'percentage-low';
+
+                // 准备随机样本
+                const samples = item.samples || [];
+                const randomSamples = samples
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, sampleCount);
+
+                let samplesHtml = '';
+                if (randomSamples.length > 0) {
+                    samplesHtml = `
+                        <div class="sample-section">
+                            <div class="sample-title">📝 随机样本 (${randomSamples.length}条):</div>
+                            ${randomSamples.map(sample =>
+                                `<div class="sample-item">${escapeHtml(sample)}</div>`
+                            ).join('')}
+                        </div>
+                    `;
+                }
+
+                // 标记是否为聚合组
+                const groupTag = item.isGroup ? ' <span style="background:#ffa502;color:white;padding:2px 6px;border-radius:4px;font-size:10px;">聚合</span>' : '';
+
+                row.innerHTML = `
+                    <td class="rank">#${index + 1}</td>
+                    <td class="percentage">
+                        <span class="percentage-badge ${percentageClass}">${percentage}%</span>
+                    </td>
+                    <td class="count">${formatNumber(item.count)}</td>
+                    <td class="log-content">
+                        <div>${escapeHtml(item.content)}${groupTag}</div>
+                        ${samplesHtml}
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            // 更新图表
+            updateBarChart(topResults.slice(0, 10), totalLines);
+
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        function updateBarChart(topResults, totalLines) {
+            const chartContainer = document.getElementById('barChart');
+            chartContainer.innerHTML = '';
+
+            topResults.forEach((item, index) => {
+                const percentage = totalLines > 0 ? ((item.count / totalLines) * 100).toFixed(2) : 0;
+                const barItem = document.createElement('div');
+                barItem.className = 'bar-item';
+
+                const truncatedContent = item.content.length > 50 ?
+                    item.content.substring(0, 50) + '...' : item.content;
+
+                barItem.innerHTML = `
+                    <div class="bar-label">#${index + 1}</div>
+                    <div class="bar-wrapper">
+                        <div class="bar" style="width: ${Math.min(percentage * 5, 100)}%">
+                            ${percentage}%
+                        </div>
+                    </div>
+                `;
+                chartContainer.appendChild(barItem);
+            });
+        }
+
+        function showProgress() {
+            document.getElementById('progressSection').style.display = 'block';
+        }
+
+        function updateProgress(percent, text) {
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressText').textContent = text;
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = '❌ ' + message;
+            errorElement.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function clearResults() {
+            analysisResults = [];
+            document.getElementById('resultsTable').innerHTML = '';
+            document.getElementById('barChart').innerHTML = '';
+            document.getElementById('statsSection').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('progressSection').style.display = 'none';
+            hideError();
+        }
+
+        function exportResults() {
+            if (analysisResults.length === 0) {
+                showError('没有可导出的结果');
+                return;
+            }
+
+            let csv = '排名,占比(%),重复次数,是否聚合,日志模板,样本日志1,样本日志2,样本日志3\n';
+            const totalLines = analysisResults.reduce((sum, item) => sum + item.count, 0);
+
+            analysisResults.forEach((item, index) => {
+                const percentage = totalLines > 0 ? ((item.count / totalLines) * 100).toFixed(2) : 0;
+                const escapedContent = `"${item.content.replace(/"/g, '""')}"`;
+
+                // 提取样本
+                const samples = item.samples || [];
+                const sample1 = samples[0] ? `"${samples[0].replace(/"/g, '""')}"` : '""';
+                const sample2 = samples[1] ? `"${samples[1].replace(/"/g, '""')}"` : '""';
+                const sample3 = samples[2] ? `"${samples[2].replace(/"/g, '""')}"` : '""';
+
+                csv += `${index + 1},${percentage},${item.count},${item.isGroup ? '是' : '否'},${escapedContent},${sample1},${sample2},${sample3}\n`;
+            });
+
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `log_analysis_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+        }
+
+        function formatNumber(num) {
+            return num.toLocaleString('zh-CN');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 监听显示数量变化
+        document.getElementById('topN').addEventListener('change', function() {
+            if (analysisResults.length > 0) {
+                displayResults();
+            }
+        });
+    </script>
+</body>
+</html>
