@@ -720,6 +720,7 @@
         let isAnalyzing = false;
         let realtimeUpdateTimer = null;
         let stopRequested = false; // 停止请求标志
+        let totalLinesInFiles = 0; // 文件总行数（用于正确计算占比）
 
         // 切换高级设置面板
         document.getElementById('settingsToggle').addEventListener('click', function() {
@@ -1040,11 +1041,12 @@
                     mode: 'read'
                 });
 
-                analysisResults = [];
-                let totalLines = 0;
-                let fileCount = 0;
-                const logMap = new Map();
-                let lastRealtimeUpdate = 0;
+                        analysisResults = [];
+            totalLinesInFiles = 0; // 保存文件总行数
+            let totalLines = 0;
+            let fileCount = 0;
+            const logMap = new Map();
+            let lastRealtimeUpdate = 0;
 
                 // 获取所有匹配的文件
                 const filesToProcess = [];
@@ -1134,6 +1136,7 @@
                     resultsArray.sort((a, b) => b.count - a.count);
 
                     analysisResults = resultsArray;
+                    totalLinesInFiles = totalLines; // 保存文件总行数
 
                     // 隐藏实时结果
                     document.getElementById('realtimeResults').style.display = 'none';
@@ -1428,7 +1431,11 @@
             document.getElementById('totalLines').textContent = formatNumber(totalLines);
             document.getElementById('uniqueLogs').textContent = formatNumber(uniqueLogs);
 
-            const duplicateCount = duplicates.reduce((sum, item) => sum + item.count, 0);
+            // 重复率 = 所有重复日志的总行数 / 总日志行数
+            // 使用 logMap（未过滤）来计算，只统计重复次数 >= 2 的日志
+            // 注意：这里 logMap 已经在外面处理完，我们只能用 duplicates 来估算
+            // 所以正确做法是：根据唯一日志数和总行数来计算
+            const duplicateCount = totalLines - uniqueLogs;
             const duplicateRate = totalLines > 0 ? ((duplicateCount / totalLines) * 100).toFixed(2) : 0;
             document.getElementById('duplicateRate').textContent = duplicateRate + '%';
 
@@ -1551,11 +1558,12 @@
                 }
             });
 
-            const totalLines = results.reduce((sum, item) => sum + item.count, 0);
-            const lowValueRatio = totalLines > 0 ? ((lowValueLogs / totalLines) * 100).toFixed(2) : 0;
+                    // 使用文件总行数而不是过滤后的结果行数
+                    const displayTotalLines = totalLinesInFiles;
+            const lowValueRatio = displayTotalLines > 0 ? ((lowValueLogs / displayTotalLines) * 100).toFixed(2) : 0;
 
             // 估算优化空间
-            if (totalLines > 0 && lowValueLogs > 0) {
+            if (totalLinesInFiles > 0 && lowValueLogs > 0) {
                 const summaryDiv = document.createElement('div');
                 summaryDiv.className = 'warning-box';
                 summaryDiv.style.background = '#d4edda';
