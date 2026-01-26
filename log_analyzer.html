@@ -16,10 +16,13 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .container {
-            max-width: 1400px;
+            width: 100%;
+            max-width: 1200px;
             margin: 0 auto;
             background: white;
             border-radius: 16px;
@@ -184,6 +187,9 @@
 
         .results-section {
             display: none;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
         }
 
         .results-header {
@@ -194,6 +200,8 @@
             padding: 15px;
             background: #f8f9fa;
             border-radius: 8px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .results-header h2 {
@@ -217,10 +225,19 @@
             padding: 8px;
         }
 
+        .results-content {
+            width: 100%;
+            overflow-x: hidden;
+        }
+
         .log-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
+            table-layout: fixed;
+            max-width: 100%;
+            overflow-wrap: break-word;
+            border-spacing: 0;
         }
 
         .log-table th {
@@ -231,12 +248,18 @@
             font-weight: 600;
             position: sticky;
             top: 0;
+            white-space: nowrap;
+            word-wrap: normal;
         }
 
         .log-table td {
             padding: 12px 15px;
             border-bottom: 1px solid #e0e0e0;
             vertical-align: top;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
         }
 
         .log-table tr:hover {
@@ -245,6 +268,8 @@
 
         .rank {
             width: 60px;
+            min-width: 60px;
+            max-width: 60px;
             text-align: center;
             font-weight: bold;
             color: #667eea;
@@ -252,6 +277,8 @@
 
         .percentage {
             width: 100px;
+            min-width: 100px;
+            max-width: 100px;
             text-align: center;
         }
 
@@ -280,12 +307,16 @@
 
         .count {
             width: 80px;
+            min-width: 80px;
+            max-width: 80px;
             text-align: center;
             color: #666;
         }
 
         .importance {
             width: 90px;
+            min-width: 90px;
+            max-width: 90px;
             text-align: center;
         }
 
@@ -327,9 +358,13 @@
             font-family: 'Consolas', 'Courier New', monospace;
             font-size: 12px;
             color: #333;
-            word-break: break-all;
+            word-break: break-word;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
             line-height: 1.5;
-            max-width: 600px;
+            max-width: 100%;
+            white-space: pre-wrap;
+            hyphens: auto;
         }
 
         .sample-section {
@@ -338,6 +373,8 @@
             background: #f5f5f5;
             border-radius: 6px;
             border-left: 3px solid #667eea;
+            max-width: 100%;
+            overflow: hidden;
         }
 
         .sample-title {
@@ -353,11 +390,26 @@
             color: #555;
             padding: 6px 0;
             border-bottom: 1px dashed #e0e0e0;
-            word-break: break-all;
+            word-break: break-word;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.4;
+            white-space: pre-wrap;
         }
 
         .sample-item:last-child {
             border-bottom: none;
+        }
+
+        .sample-item .prefix {
+            color: #667eea;
+            background: #f0f7ff;
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+
+        .sample-item .content {
+            color: #333;
         }
 
         .chart-container {
@@ -411,6 +463,39 @@
             color: white;
             font-size: 12px;
             font-weight: bold;
+        }
+
+        .bar-sample-container {
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        .sample-toggle {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        .sample-toggle:hover {
+            background: #e0e0e0;
+        }
+
+        .bar-sample {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 11px;
+            color: #555;
+            padding: 6px 10px;
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            word-break: break-word;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
         }
 
         .export-btn {
@@ -585,21 +670,39 @@
                 </div>
                 <div class="input-group">
                     <label>📝 日志前缀忽略模式（正则表达式）</label>
-                    <input type="text" id="ignorePrefixPattern" placeholder="例如: ^\[[^\]]+\]\[[^\]]+\]\[[^\]]+\]\[[^\]]+\]\[[^\]]+\]">
+                    <input type="text" id="ignorePrefixPattern" placeholder="例如: ^\[[^\]]+\]\[[^\]]+\]\[[^\]]+\]\[[^\]]+\]\[[^\]]+\]" oninput="previewRegexMatch()">
                     <div style="font-size:11px;color:#666;margin-top:5px;">
                         💡 用于匹配并移除日志行的前缀部分（如时间戳、进程ID等），匹配到的内容将被移除后再进行重复度计算。
                         <br>留空则使用自动检测的默认格式：<code style="background:#eee;padding:2px 4px;border-radius:3px;">^\[[^\]]+\]\[[^\]]+\]\[[^\]]+\]\[[^\]]+->[^\]]+@\d+@\w+\]:</code>
                     </div>
+                    <div style="margin-top:10px;padding:10px;background:#f0f7ff;border-radius:6px;border:1px solid #d0e1f5;">
+                        <label style="font-size:12px;font-weight:bold;color:#0066cc;">🔍 正则表达式实时预览</label>
+                        <textarea id="regexTestInput" rows="4" placeholder="在此粘贴几行测试日志，实时预览正则匹配效果..." style="width:100%;margin-top:8px;padding:8px;border:1px solid #ddd;border-radius:4px;font-family:monospace;font-size:12px;" oninput="previewRegexMatch()">[TRACE][14:19:24.947][ztsmrtp.exe 7648.5240 ][QMHttpsMgr.dll->QMHttpsMgrImp.cpp@630@__RequestInternal]: Enter.
+[INFO][14:19:25.123][ztsmrtp.exe 7648.5240 ][QMHttpUtils.dll->QMCURLMgr.cpp@41@Start]: Start processing.</textarea>
+                        <div id="regexPreviewResult" style="margin-top:10px;"></div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>📦 模块名提取模式（正则表达式捕获组）</label>
+                    <input type="text" id="moduleExtractPattern" placeholder="例如: \[([^\]]+)->" oninput="previewModuleExtract()">
+                    <div style="font-size:11px;color:#666;margin-top:5px;">
+                        💡 使用正则表达式捕获组(括号)提取模块名。例如：<code>\[([^\]]+)-></code> 会匹配 <code>[QMHttpsMgr.dll]-></code> 并提取 <code>QMHttpsMgr.dll</code>
+                        <br>留空则使用自动检测的默认格式，或不提取模块信息。
+                    </div>
+                    <div id="modulePreviewResult" style="margin-top:8px;padding:8px;background:#fff8e1;border-radius:4px;border:1px solid #ffe082;font-size:12px;"></div>
                 </div>
                 <div class="input-group">
                     <label>🔧 常用日志格式预设</label>
-                    <select id="logFormatPreset" style="width:100%;padding:8px;border:2px solid #ddd;border-radius:6px;font-size:13px;">
+                    <select id="logFormatPreset" style="width:100%;padding:8px;border:2px solid #ddd;border-radius:6px;font-size:13px;" onchange="applyLogFormatPreset()">
                         <option value="auto">自动检测（推荐）</option>
-                        <option value="iOA">iOA企业版格式</option>
-                        <option value="apache">Apache/Nginx格式</option>
-                        <option value="system">系统日志格式</option>
+                        <option value="iOA">iOA企业版格式 - [LEVEL][TIME][PID TID][MODULE->FILE@LINE@FUNCTION]:</option>
+                        <option value="apache">Apache/Nginx格式 - [TIME] [LEVEL] [PID] Message</option>
+                        <option value="system">系统日志格式 - MMM DD HH:MM:SS HOST Process[PID]: Message</option>
+                        <option value="log4j">Log4j/Logback格式 - LEVEL TIME [THREAD] CLASS - Message</option>
+                        <option value="golang">Go标准日志格式 - TIME LEVEL [MODULE]: Message</option>
                         <option value="custom">自定义</option>
                     </select>
+                    <div id="presetDescription" style="margin-top:6px;font-size:11px;color:#666;"></div>
                 </div>
                 <div class="input-group">
                     <div class="checkbox-group">
@@ -627,6 +730,19 @@
                     <div class="checkbox-group">
                         <input type="checkbox" id="showRealtime" checked>
                         <label for="showRealtime">实时显示中间结果（每处理一定数量日志后更新）</label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="showModuleStats" checked>
+                        <label for="showModuleStats">按模块统计日志数量（显示哪些模块输出最多）</label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>🎯 模块筛选（仅分析指定模块的日志重复率）</label>
+                    <input type="text" id="moduleFilter" placeholder="例如: QMIpc.dll 或支持正则表达式如: QMI.*\.dll">
+                    <div style="font-size:11px;color:#666;margin-top:5px;">
+                        💡 留空则分析所有模块。输入模块名或正则表达式可只分析匹配模块的日志重复率。
                     </div>
                 </div>
                 <div class="input-group">
@@ -683,6 +799,11 @@
             </div>
         </div>
 
+        <div class="stats-section" id="moduleStatsSection" style="display:none;background:#fff8e1;border-left:4px solid #ffa502;">
+            <h3 style="text-align:center;margin-bottom:20px;color:#e67e22;">📦 按模块统计日志数量</h3>
+            <div id="moduleStatsContent"></div>
+        </div>
+
         <div class="results-section" id="resultsSection">
             <div class="results-header">
                 <h2>📋 重复日志分析结果</h2>
@@ -694,19 +815,21 @@
                 </div>
             </div>
 
-            <table class="log-table">
-                <thead>
-                    <tr>
-                        <th class="rank">排名</th>
-                        <th class="percentage">占比</th>
-                        <th class="count">重复次数</th>
-                        <th class="importance">重要性</th>
-                        <th class="log-content">日志模板</th>
-                    </tr>
-                </thead>
-                <tbody id="resultsTable">
-                </tbody>
-            </table>
+            <div class="results-content">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th class="rank">排名</th>
+                            <th class="percentage">占比</th>
+                            <th class="count">重复次数</th>
+                            <th class="importance">重要性</th>
+                            <th class="log-content" style="width: auto; min-width: 300px;">日志模板</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTable">
+                    </tbody>
+                </table>
+            </div>
 
             <div class="chart-container">
                 <div class="chart-title">📈 TOP 10 重复日志分布</div>
@@ -721,6 +844,8 @@
         let realtimeUpdateTimer = null;
         let stopRequested = false; // 停止请求标志
         let totalLinesInFiles = 0; // 文件总行数（用于正确计算占比）
+        let moduleStats = new Map(); // 模块统计
+        let moduleSamples = new Map(); // 模块示例日志
 
         // 切换高级设置面板
         document.getElementById('settingsToggle').addEventListener('click', function() {
@@ -728,17 +853,58 @@
         });
 
         // 日志格式预设切换
-        document.getElementById('logFormatPreset').addEventListener('change', function() {
-            const preset = this.value;
-            const patterns = {
-                'auto': '',
-                'iOA': '^\\[[^\\]]+\\]\\[[^\\]]+\\]\\[[^\\]]+\\]\\[[^\\]]+\\-\\>[^\\]]+@\\d+@\\w+\\]:',
-                'apache': '^\\[[^\\]]+\\] \\[[^\\]]+\\]',
-                'system': '^[A-Za-z]{3}\\s+\\d{1,2}\\s+\\d{2}:\\d{2}:\\d{2}\\s+',
-                'custom': ''
+        function applyLogFormatPreset() {
+            const preset = document.getElementById('logFormatPreset').value;
+            const presets = {
+                'auto': {
+                    ignorePattern: '',
+                    modulePattern: '',
+                    description: '自动检测日志格式并应用默认规则'
+                },
+                'iOA': {
+                    ignorePattern: '^\\[[^\\]]+\\]\\[[^\\]]+\\]\\[[^\\]]+\\]\\[[^\\]]+->[^\]]+@\\d+@\\w+\\]:',
+                    modulePattern: '\\[([^\]]+\\.dll)->',
+                    description: '示例: [TRACE][14:19:24.947][ztsmrtp.exe 7648.5240 ][QMHttpsMgr.dll->QMHttpsMgrImp.cpp@630@__RequestInternal]: Enter.'
+                },
+                'apache': {
+                    ignorePattern: '^\\[[^\\]]+\\] \\[[^\\]]+\\]',
+                    modulePattern: '',
+                    description: '示例: [2024-01-15 10:30:45] [error] [pid=1234] Request failed'
+                },
+                'system': {
+                    ignorePattern: '^[A-Za-z]{3}\\s+\\d{1,2}\\s+\\d{2}:\\d{2}:\\d{2}\\s+',
+                    modulePattern: '',
+                    description: '示例: Jan 15 10:30:45 hostname process[1234]: Starting...'
+                },
+                'log4j': {
+                    ignorePattern: '^[A-Z]+\\s+\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\,\\d{3}\\s+\\[\\w+-\\d+\\]\\s+[\\w\\.]+\\s+-\\s',
+                    modulePattern: '([\\w\\.]+)\\s+-',
+                    description: '示例: INFO 2024-01-15 10:30:45,123 [main] com.example.MyClass - Started'
+                },
+                'golang': {
+                    ignorePattern: '^\\d{4}/\\d{2}/\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.[\\d]+\\s+[A-Z]+\\s+',
+                    modulePattern: '\\[([^\]]+)\\]:',
+                    description: '示例: 2024/01/15 10:30:45.123 INFO [main]: Processing request'
+                },
+                'custom': {
+                    ignorePattern: '',
+                    modulePattern: '',
+                    description: '自定义模式 - 手动配置正则表达式'
+                }
             };
-            document.getElementById('ignorePrefixPattern').value = patterns[preset] || '';
-        });
+
+            const selected = presets[preset];
+            document.getElementById('ignorePrefixPattern').value = selected.ignorePattern || '';
+            document.getElementById('moduleExtractPattern').value = selected.modulePattern || '';
+            document.getElementById('presetDescription').textContent = selected.description || '';
+
+            // 触发预览更新
+            previewRegexMatch();
+            previewModuleExtract();
+        }
+
+        // 初始化时应用默认预设
+        applyLogFormatPreset();
 
         // ============ 多种相似度算法实现 ============
 
@@ -906,6 +1072,21 @@
 
         // 解析日志行，提取核心内容和元数据
         function parseLogLine(line) {
+            // 尝试提取模块名（用户自定义规则）
+            let extractedModule = '';
+            const modulePattern = document.getElementById('moduleExtractPattern')?.value?.trim();
+            if (modulePattern) {
+                try {
+                    const moduleRegex = new RegExp(modulePattern);
+                    const moduleMatch = line.match(moduleRegex);
+                    if (moduleMatch && moduleMatch[1]) {
+                        extractedModule = moduleMatch[1];
+                    }
+                } catch (e) {
+                    console.warn('模块提取正则表达式错误:', e.message);
+                }
+            }
+
             // 首先尝试用户自定义的忽略模式
             const customPattern = document.getElementById('ignorePrefixPattern')?.value?.trim();
             if (customPattern) {
@@ -913,15 +1094,31 @@
                     const customRegex = new RegExp(customPattern);
                     const customMatch = line.match(customRegex);
                     if (customMatch) {
+                        // 尝试从自定义匹配的前缀中提取模块名
+                        let moduleFromPrefix = extractedModule || '';
+                        if (!moduleFromPrefix) {
+                            // 尝试从匹配到的前缀中提取模块名（匹配 [xxx.dll]-> 模式）
+                            const moduleInPrefix = customMatch[0].match(/\[([^\]]+\.dll)\]->/);
+                            if (moduleInPrefix) {
+                                moduleFromPrefix = moduleInPrefix[1];
+                            } else {
+                                // 尝试匹配其他可能的模块名格式
+                                const simpleModule = customMatch[0].match(/\[([^\]]+)\]->/);
+                                if (simpleModule) {
+                                    moduleFromPrefix = simpleModule[1];
+                                }
+                            }
+                        }
                         return {
                             content: line.substring(customMatch[0].length).trim(),
                             rawPrefix: customMatch[0],
                             level: '',
                             timestamp: '',
                             processInfo: '',
-                            module: '',
+                            module: moduleFromPrefix,
                             sourceFile: '',
-                            lineNo: ''
+                            lineNo: '',
+                            fullPrefixWithModule: customMatch[0]
                         };
                     }
                 } catch (e) {
@@ -930,38 +1127,49 @@
             }
 
             // 匹配日志前缀: [LEVEL][TIME][PID TID][MODULE->FILE@LINE]:
-            const logPrefixRegex = /^\[(\w+)\]\[([^\]]+)\]\[([^\]]+)\]\[([^\]]+)->([^\]]+)@(\d+)@\w+\]:\s*(.*)$/;
+            // 改进：忽略到模块名之后（->）而不是到文件名
+            // 注意：LEVEL 前面可能有空格，如 "[ INFO"
+            const logPrefixRegex = /^\s*\[([^\]]+)\]\[([^\]]+)\]\[([^\]]+)\]\[([^\]]+)->([^\]]+)@(\d+)@\w+\]:\s*(.*)$/;
             const match = line.match(logPrefixRegex);
 
             if (match) {
                 return {
-                    level: match[1],
+                    level: match[1].trim(),
                     timestamp: match[2],
                     processInfo: match[3],
-                    module: match[4],
+                    module: extractedModule || match[4],  // 优先使用自定义提取，否则使用默认
                     sourceFile: match[5],
                     lineNo: match[6],
                     content: match[7],
-                    rawPrefix: match[0].substring(0, match[0].lastIndexOf(':') + 1)
+                    rawPrefix: match[0].substring(0, match[0].lastIndexOf(':') + 1),
+                    fullPrefixWithModule: `[${match[1].trim()}][${match[2]}][${match[3]}][${match[4]}]->`
                 };
             }
 
-            // 尝试其他常见格式
-            const simpleRegex = /^\[(\w+)\]\[([^\]]+)\](.*)$/;
+            // 尝试其他常见格式（也支持 LEVEL 前有空格）
+            const simpleRegex = /^\s*\[([^\]]+)\]\[([^\]]+)\](.*)$/;
             const simpleMatch = line.match(simpleRegex);
 
             if (simpleMatch) {
                 return {
-                    level: simpleMatch[1],
+                    level: simpleMatch[1].trim(),
                     timestamp: simpleMatch[2],
                     content: simpleMatch[3],
-                    rawPrefix: simpleMatch[0]
+                    rawPrefix: simpleMatch[0],
+                    module: extractedModule || '',
+                    sourceFile: '',
+                    lineNo: '',
+                    fullPrefixWithModule: simpleMatch[0]
                 };
             }
 
             return {
                 content: line,
-                rawPrefix: ''
+                rawPrefix: '',
+                module: '',
+                sourceFile: '',
+                lineNo: '',
+                fullPrefixWithModule: ''
             };
         }
 
@@ -1010,6 +1218,8 @@
             if (isAnalyzing) return;
             isAnalyzing = true;
             stopRequested = false;
+            moduleStats.clear(); // 清空模块统计
+            moduleSamples.clear(); // 清空模块示例
 
             const directory = document.getElementById('directoryInput').value.trim();
             const pattern = document.getElementById('patternInput').value.trim();
@@ -1017,6 +1227,19 @@
             const similarityThreshold = parseInt(document.getElementById('similarityThreshold').value) || 70;
             const showRealtime = document.getElementById('showRealtime').checked;
             const realtimeInterval = parseInt(document.getElementById('realtimeInterval').value) || 5000;
+            const moduleFilter = document.getElementById('moduleFilter')?.value?.trim();
+
+            // 编译模块筛选正则
+            let moduleFilterRegex = null;
+            if (moduleFilter) {
+                try {
+                    moduleFilterRegex = new RegExp(moduleFilter);
+                } catch (e) {
+                    showError('模块筛选正则表达式错误: ' + e.message);
+                    isAnalyzing = false;
+                    return;
+                }
+            }
 
             if (!directory) {
                 showError('请输入日志目录路径');
@@ -1077,8 +1300,28 @@
 
                         const trimmedLine = line.trim();
                         if (trimmedLine && isValidLogLine(trimmedLine)) {
+                            // 解析日志以获取模块信息
+                            const parsed = parseLogLine(trimmedLine);
+                            const moduleName = parsed.module ? parsed.module.trim() : '(未识别模块)';
+
+                            // 模块筛选：如果设置了模块筛选，跳过不匹配的模块
+                            if (moduleFilterRegex && moduleName !== '(未识别模块)' && !moduleFilterRegex.test(moduleName)) {
+                                continue;
+                            }
+
                             totalLines++;
                             lineCountInFile++;
+                            moduleStats.set(moduleName, (moduleStats.get(moduleName) || 0) + 1);
+
+                            // 收集模块示例日志（每个模块最多3条）
+                            if (!moduleSamples.has(moduleName)) {
+                                moduleSamples.set(moduleName, []);
+                            }
+                            const samples = moduleSamples.get(moduleName);
+                            if (samples.length < 3) {
+                                samples.push(trimmedLine);
+                            }
+
                             const normalizedLine = normalizeLine(trimmedLine);
 
                             if (!logMap.has(normalizedLine)) {
@@ -1450,17 +1693,111 @@
             };
             document.getElementById('usedAlgorithm').textContent = algoNames[algorithm] || algorithm;
 
+            // 检查是否使用了模块筛选
+            const moduleFilter = document.getElementById('moduleFilter')?.value?.trim();
+            if (moduleFilter) {
+                // 更新统计说明，显示是筛选后的结果
+                document.getElementById('usedAlgorithm').textContent = algoNames[algorithm] || algorithm + ' (模块筛选)';
+            }
+
             document.getElementById('statsSection').style.display = 'block';
+
+            // 显示模块统计（如果开启）
+            const showModuleStats = document.getElementById('showModuleStats')?.checked;
+            if (showModuleStats && moduleStats.size > 0) {
+                displayModuleStats(totalLines);
+            } else {
+                document.getElementById('moduleStatsSection').style.display = 'none';
+            }
+        }
+
+        function displayModuleStats(totalLines) {
+            const moduleStatsContent = document.getElementById('moduleStatsContent');
+            moduleStatsContent.innerHTML = '';
+
+            // 按日志数量排序
+            const sortedModules = Array.from(moduleStats.entries())
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 20);  // 只显示前20个
+
+            const table = document.createElement('table');
+            table.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;';
+
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th style="background:#ffa502;color:white;padding:10px;text-align:left;white-space:nowrap;width:60px;min-width:60px;max-width:60px;">排名</th>
+                        <th style="background:#ffa502;color:white;padding:10px;text-align:left;white-space:nowrap;width:150px;min-width:150px;max-width:200px;">模块名</th>
+                        <th style="background:#ffa502;color:white;padding:10px;text-align:left;white-space:nowrap;width:100px;min-width:100px;max-width:100px;">日志数量</th>
+                        <th style="background:#ffa502;color:white;padding:10px;text-align:left;white-space:nowrap;width:80px;min-width:80px;max-width:80px;">占比</th>
+                        <th style="background:#ffa502;color:white;padding:10px;text-align:left;white-space:nowrap;">日志示例</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
+
+            const tbody = table.querySelector('tbody');
+
+            sortedModules.forEach(([moduleName, count], index) => {
+                const percentage = totalLines > 0 ? ((count / totalLines) * 100).toFixed(2) : 0;
+                const row = document.createElement('tr');
+
+                const bgStyle = index % 2 === 0 ? 'background:#fff;' : 'background:#fafafa;';
+                row.style.cssText = `${bgStyle}border-bottom:1px solid #e0e0e0;`;
+
+                // 获取该模块的示例日志（最多3条）
+                const samples = moduleSamples.get(moduleName) || [];
+                const samplesHtml = samples.length > 0 ? 
+                    `<div style="margin-top:8px;padding:8px;background:#f5f5f5;border-left:3px solid #e67e22;font-size:12px;max-height:120px;overflow-y:auto;word-wrap:break-word;word-break:break-word;overflow-wrap:break-word;">
+                        ${samples.map(s => `<div style="margin:4px 0;white-space:pre-wrap;font-family:monospace;word-wrap:break-word;word-break:break-word;overflow-wrap:break-word;">${escapeHtml(s)}</div>`).join('')}
+                    </div>` : 
+                    `<div style="margin-top:8px;padding:8px;background:#fff3cd;border-left:3px solid #ffc107;font-size:12px;">
+                        无示例日志
+                    </div>`;
+
+                row.innerHTML = `
+                    <td style="padding:10px;font-weight:bold;color:#e67e22;word-wrap:break-word;">#${index + 1}</td>
+                    <td style="padding:10px;font-family:monospace;word-wrap:break-word;word-break:break-word;overflow-wrap:break-word;">${escapeHtml(moduleName)}</td>
+                    <td style="padding:10px;color:#666;word-wrap:break-word;">${formatNumber(count)}</td>
+                    <td style="padding:10px;color:#e67e22;font-weight:bold;word-wrap:break-word;">${percentage}%</td>
+                    <td style="padding:10px;word-wrap:break-word;word-break:break-word;overflow-wrap:break-word;">${samplesHtml}</td>
+                `;
+
+                tbody.appendChild(row);
+            });
+
+            moduleStatsContent.appendChild(table);
+            document.getElementById('moduleStatsSection').style.display = 'block';
         }
 
         function displayResults() {
             const topN = parseInt(document.getElementById('topN').value) || 20;
             const topResults = analysisResults.slice(0, topN);
-            const totalLines = analysisResults.reduce((sum, item) => sum + item.count, 0);
+            // 使用文件总行数而不是重复日志总行数，这样计算的是在整个日志文件中的占比
+            const totalLines = totalLinesInFiles || analysisResults.reduce((sum, item) => sum + item.count, 0);
             const sampleCount = Math.min(parseInt(document.getElementById('sampleCount').value) || 3, 10);
 
             const tableBody = document.getElementById('resultsTable');
             tableBody.innerHTML = '';
+
+            // 显示模块筛选提示（如果有）
+            const resultsSection = document.getElementById('resultsSection');
+            const existingFilterInfo = resultsSection.querySelector('.module-filter-info');
+            if (existingFilterInfo) {
+                existingFilterInfo.remove();
+            }
+
+            const moduleFilter = document.getElementById('moduleFilter')?.value?.trim();
+            if (moduleFilter) {
+                const filterInfo = document.createElement('div');
+                filterInfo.className = 'warning-box module-filter-info';
+                filterInfo.style.background = '#e7f3ff';
+                filterInfo.style.borderColor = '#0066cc';
+                filterInfo.style.color = '#003366';
+                filterInfo.style.marginBottom = '20px';
+                filterInfo.innerHTML = `🎯 <strong>模块筛选</strong> - 当前分析结果仅包含匹配 "<code>${escapeHtml(moduleFilter)}</code>" 的模块日志`;
+                resultsSection.insertBefore(filterInfo, resultsSection.firstChild);
+            }
 
             topResults.forEach((item, index) => {
                 const percentage = totalLines > 0 ? ((item.count / totalLines) * 100).toFixed(2) : 0;
@@ -1508,9 +1845,9 @@
                 if (randomSamples.length > 0) {
                     samplesHtml = `
                         <div class="sample-section">
-                            <div class="sample-title">📝 随机样本 (${randomSamples.length}条):</div>
+                            <div class="sample-title">📝 随机样本 (${randomSamples.length}条) - 原始日志行（蓝色为前缀，黑色为内容）:</div>
                             ${randomSamples.map(sample =>
-                                `<div class="sample-item">${escapeHtml(sample)}</div>`
+                                `<div class="sample-item">${highlightPrefix(sample)}</div>`
                             ).join('')}
                         </div>
                     `;
@@ -1536,72 +1873,128 @@
                 tableBody.appendChild(row);
             });
 
-            // 更新图表
+            // 更新图表（包含优化建议）
             updateBarChart(topResults.slice(0, 10), totalLines);
 
             document.getElementById('resultsSection').style.display = 'block';
-
-            // 显示优化建议统计
-            showOptimizationSummary(topResults);
-        }
-
-        function showOptimizationSummary(results) {
-            let highValueLogs = 0;
-            let lowValueLogs = 0;
-            let potentialSpaceSaving = 0;
-
-            results.forEach(item => {
-                if (item.importanceScore >= 3) {
-                    highValueLogs += item.count;
-                } else {
-                    lowValueLogs += item.count;
-                }
-            });
-
-                    // 使用文件总行数而不是过滤后的结果行数
-                    const displayTotalLines = totalLinesInFiles;
-            const lowValueRatio = displayTotalLines > 0 ? ((lowValueLogs / displayTotalLines) * 100).toFixed(2) : 0;
-
-            // 估算优化空间
-            if (totalLinesInFiles > 0 && lowValueLogs > 0) {
-                const summaryDiv = document.createElement('div');
-                summaryDiv.className = 'warning-box';
-                summaryDiv.style.background = '#d4edda';
-                summaryDiv.style.borderColor = '#28a745';
-                summaryDiv.style.color = '#155724';
-                summaryDiv.style.marginTop = '20px';
-                summaryDiv.innerHTML = `
-                    <strong>📊 日志优化建议总结：</strong><br>
-                    - 低价值日志占比: <strong>${lowValueRatio}%</strong> (${formatNumber(lowValueLogs)}行)<br>
-                    - 如果关闭这些低价值日志，预计可节省 <strong>${lowValueRatio}%</strong> 的日志空间<br>
-                    - 建议优先优化 TRACE/DEBUG 级别和函数调用日志
-                `;
-
-                const chartContainer = document.getElementById('barChart');
-                chartContainer.parentNode.insertBefore(summaryDiv, chartContainer);
-            }
         }
 
         function updateBarChart(topResults, totalLines) {
             const chartContainer = document.getElementById('barChart');
             chartContainer.innerHTML = '';
 
-            topResults.forEach((item, index) => {
+            // 按重要性分组统计
+            const importanceSummary = {
+                high: { count: 0, logs: [] },
+                medium: { count: 0, logs: [] },
+                low: { count: 0, logs: [] }
+            };
+
+            topResults.forEach(item => {
+                if (item.importanceScore >= 3) {
+                    importanceSummary.high.count += item.count;
+                    importanceSummary.high.logs.push(item);
+                } else if (item.importanceScore >= 2) {
+                    importanceSummary.medium.count += item.count;
+                    importanceSummary.medium.logs.push(item);
+                } else {
+                    importanceSummary.low.count += item.count;
+                    importanceSummary.low.logs.push(item);
+                }
+            });
+
+            // 显示重要性分布总结
+            const summaryDiv = document.createElement('div');
+            summaryDiv.style.marginBottom = '20px';
+            summaryDiv.style.padding = '15px';
+            summaryDiv.style.background = '#f8f9fa';
+            summaryDiv.style.borderRadius = '8px';
+            summaryDiv.style.borderLeft = '4px solid #667eea';
+            
+            const lowValueRatio = totalLines > 0 ? ((importanceSummary.low.count / totalLines) * 100).toFixed(2) : 0;
+            const mediumValueRatio = totalLines > 0 ? ((importanceSummary.medium.count / totalLines) * 100).toFixed(2) : 0;
+            const highValueRatio = totalLines > 0 ? ((importanceSummary.high.count / totalLines) * 100).toFixed(2) : 0;
+
+            summaryDiv.innerHTML = `
+                <strong>📊 日志价值分布：</strong><br>
+                <span style="color:#20bf6b;">▲ 高价值日志: ${highValueRatio}% (${formatNumber(importanceSummary.high.count)}行)</span> | 
+                <span style="color:#ffa502;">▲ 中价值日志: ${mediumValueRatio}% (${formatNumber(importanceSummary.medium.count)}行)</span> | 
+                <span style="color:#ff6b6b;">▲ 低价值日志: ${lowValueRatio}% (${formatNumber(importanceSummary.low.count)}行)</span>
+                ${lowValueRatio > 0 ? `<br><span style="color:#d63031;font-weight:bold;">⚠️ 可优化空间: ${lowValueRatio}% (${formatNumber(importanceSummary.low.count)}行)</span>` : ''}
+            `;
+            chartContainer.appendChild(summaryDiv);
+
+            // 显示TOP 10详情，按低价值优先排序（让用户一眼看到需要优化的）
+            const sortedForDisplay = [
+                ...importanceSummary.low.logs,
+                ...importanceSummary.medium.logs,
+                ...importanceSummary.high.logs
+            ].slice(0, 10);
+
+            sortedForDisplay.forEach((item, index) => {
                 const percentage = totalLines > 0 ? ((item.count / totalLines) * 100).toFixed(2) : 0;
                 const barItem = document.createElement('div');
                 barItem.className = 'bar-item';
+                barItem.style.marginBottom = '15px';
+                barItem.style.padding = '10px';
+                barItem.style.background = index % 2 === 0 ? '#fafafa' : 'white';
+                barItem.style.borderRadius = '6px';
 
-                const truncatedContent = item.content.length > 50 ?
-                    item.content.substring(0, 50) + '...' : item.content;
+                // 获取重要性级别和颜色
+                let importanceClass, importanceText, optimizeBadge = '';
+                if (item.importanceScore >= 3) {
+                    importanceClass = 'importance-high';
+                    importanceText = '高价值';
+                } else if (item.importanceScore >= 2) {
+                    importanceClass = 'importance-medium';
+                    importanceText = '中价值';
+                } else {
+                    importanceClass = 'importance-low';
+                    importanceText = '低价值';
+                    optimizeBadge = '<span style="background:#ff6b6b;color:white;padding:2px 6px;border-radius:4px;font-size:10px;margin-left:8px;">建议优化</span>';
+                }
+
+                // 获取示例日志
+                const sampleLog = item.samples && item.samples.length > 0 ? item.samples[0] : item.content;
+                const truncatedContent = sampleLog.length > 80 ?
+                    sampleLog.substring(0, 80) + '...' : sampleLog;
 
                 barItem.innerHTML = `
-                    <div class="bar-label">#${index + 1}</div>
-                    <div class="bar-wrapper">
-                        <div class="bar" style="width: ${Math.min(percentage * 5, 100)}%">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div class="bar-label">#${index + 1}</div>
+                            <span class="importance-badge ${importanceClass}">${importanceText}</span>
+                            ${optimizeBadge}
+                        </div>
+                        <div style="font-size:12px;color:#666;">
+                            ${percentage}% | ${formatNumber(item.count)}次
+                        </div>
+                    </div>
+                    <div class="bar-wrapper" style="height:20px;">
+                        <div class="bar" style="width: ${Math.min(percentage * 5, 100)}%; height: 100%; font-size: 10px; padding-left: 8px;">
                             ${percentage}%
                         </div>
                     </div>
+                    <div class="bar-sample-container">
+                        <button class="sample-toggle">显示示例</button>
+                        <div class="bar-sample" style="display: none;">${escapeHtml(truncatedContent)}</div>
+                    </div>
                 `;
+
+                // 添加点击事件来切换示例显示
+                const toggleButton = barItem.querySelector('.sample-toggle');
+                const sampleDiv = barItem.querySelector('.bar-sample');
+                
+                toggleButton.addEventListener('click', () => {
+                    if (sampleDiv.style.display === 'none') {
+                        sampleDiv.style.display = 'block';
+                        toggleButton.textContent = '隐藏示例';
+                    } else {
+                        sampleDiv.style.display = 'none';
+                        toggleButton.textContent = '显示示例';
+                    }
+                });
+
                 chartContainer.appendChild(barItem);
             });
         }
@@ -1677,6 +2070,152 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // 高亮显示日志前缀
+        function highlightPrefix(line) {
+            const pattern = document.getElementById('ignorePrefixPattern')?.value?.trim();
+            if (!pattern) {
+                return escapeHtml(line);
+            }
+
+            try {
+                const regex = new RegExp(pattern);
+                const match = line.match(regex);
+                if (match && match[0]) {
+                    const prefix = match[0];
+                    const content = line.substring(prefix.length);
+                    return `<span class="prefix">${escapeHtml(prefix)}</span><span class="content">${escapeHtml(content)}</span>`;
+                }
+            } catch (e) {
+                // 忽略正则错误
+            }
+
+            return escapeHtml(line);
+        }
+
+        // 正则表达式实时预览功能
+        function previewRegexMatch() {
+            const pattern = document.getElementById('ignorePrefixPattern').value.trim();
+            const testInput = document.getElementById('regexTestInput').value.trim();
+            const previewResult = document.getElementById('regexPreviewResult');
+
+            if (!testInput) {
+                previewResult.innerHTML = '';
+                return;
+            }
+
+            const lines = testInput.split('\n').filter(line => line.trim());
+            let html = '<div style="font-size:12px;margin-bottom:8px;"><strong>匹配结果预览：</strong></div>';
+
+            if (!pattern) {
+                html += '<div style="color:#666;font-size:12px;">请输入正则表达式以预览匹配效果</div>';
+                previewResult.innerHTML = html;
+                return;
+            }
+
+            try {
+                const regex = new RegExp(pattern);
+                let hasMatch = false;
+                let noMatchCount = 0;
+
+                lines.forEach((line, idx) => {
+                    const match = line.match(regex);
+                    if (match && match[0]) {
+                        hasMatch = true;
+                        const matchedText = match[0];
+                        const remainingText = line.substring(matchedText.length);
+                        const previewHtml = `
+                            <div style="margin-bottom:8px;padding:8px;background:white;border:1px solid #ddd;border-radius:4px;">
+                                <div style="font-size:11px;color:#666;margin-bottom:4px;">行 ${idx + 1}:</div>
+                                <div style="font-family:monospace;font-size:12px;word-break:break-all;">
+                                    <span style="background:#ffeb3b;padding:0 2px;border-radius:2px;">${escapeHtml(matchedText)}</span>${escapeHtml(remainingText)}
+                                </div>
+                                <div style="margin-top:4px;font-size:11px;">
+                                    <span style="color:#e67e22;">✓ 匹配到前缀（将被忽略）:</span> <code>${escapeHtml(matchedText)}</code>
+                                </div>
+                                <div style="font-size:11px;">
+                                    <span style="color:#20bf6b;">✓ 剩余内容（将参与分析）:</span> <code>${escapeHtml(remainingText)}</code>
+                                </div>
+                            </div>
+                        `;
+                        html += previewHtml;
+                    } else {
+                        noMatchCount++;
+                        if (noMatchCount <= 2) {
+                            const previewHtml = `
+                                <div style="margin-bottom:8px;padding:8px;background:#ffebee;border:1px solid #ffcdd2;border-radius:4px;">
+                                    <div style="font-size:11px;color:#666;margin-bottom:4px;">行 ${idx + 1}:</div>
+                                    <div style="font-family:monospace;font-size:12px;color:#d32f2f;">${escapeHtml(line)}</div>
+                                    <div style="margin-top:4px;font-size:11px;color:#d32f2f;">✗ 未匹配到前缀</div>
+                                </div>
+                            `;
+                            html += previewHtml;
+                        }
+                    }
+                });
+
+                if (noMatchCount > 2) {
+                    html += `<div style="color:#d32f2f;font-size:12px;">...还有 ${noMatchCount - 2} 行未匹配</div>`;
+                }
+
+                previewResult.innerHTML = html;
+            } catch (error) {
+                previewResult.innerHTML = `<div style="color:#d32f2f;padding:8px;background:#ffebee;border-radius:4px;">
+                    <strong>正则表达式错误:</strong> ${escapeHtml(error.message)}
+                </div>`;
+            }
+        }
+
+        // 模块提取实时预览功能
+        function previewModuleExtract() {
+            const pattern = document.getElementById('moduleExtractPattern').value.trim();
+            const testInput = document.getElementById('regexTestInput').value.trim();
+            const previewResult = document.getElementById('modulePreviewResult');
+
+            if (!testInput) {
+                previewResult.innerHTML = '<span style="color:#999;">请先在正则预览区域输入测试日志</span>';
+                return;
+            }
+
+            const lines = testInput.split('\n').filter(line => line.trim());
+
+            if (!pattern) {
+                previewResult.innerHTML = '<span style="color:#666;">留空将使用自动检测的默认模块提取规则</span>';
+                return;
+            }
+
+            try {
+                const regex = new RegExp(pattern);
+                let modules = [];
+                let hasMatch = false;
+
+                lines.forEach((line, idx) => {
+                    const match = line.match(regex);
+                    if (match && match[1]) {
+                        hasMatch = true;
+                        modules.push({ line: idx + 1, module: match[1] });
+                    }
+                });
+
+                if (hasMatch) {
+                    const uniqueModules = [...new Set(modules.map(m => m.module))];
+                    let html = `
+                        <div><strong>提取到的模块 (${uniqueModules.length} 个):</strong></div>
+                        <div style="margin-top:6px;">
+                            ${uniqueModules.slice(0, 10).map(m => `<code style="background:white;padding:2px 6px;border-radius:3px;border:1px solid #ddd;margin-right:6px;margin-bottom:4px;display:inline-block;">${escapeHtml(m)}</code>`).join('')}
+                        </div>
+                        <div style="margin-top:6px;font-size:11px;color:#666;">
+                            ${modules.length} 次成功提取 | ${lines.length - modules.length} 次未提取
+                        </div>
+                    `;
+                    previewResult.innerHTML = html;
+                } else {
+                    previewResult.innerHTML = '<span style="color:#d32f2f;">✗ 未提取到模块名，请检查正则表达式是否包含捕获组(括号)</span>';
+                }
+            } catch (error) {
+                previewResult.innerHTML = `<span style="color:#d32f2f;">正则表达式错误: ${escapeHtml(error.message)}</span>`;
+            }
         }
 
         // 监听显示数量变化
