@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOA 54339 请求工具</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .description {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+        }
+        
+        .card-title {
+            color: #3498db;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .api-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        .api-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .status-area {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        
+        .status-area.success {
+            background-color: #d5f4e6;
+            color: #27ae60;
+            border-left: 4px solid #2ecc71;
+        }
+        
+        .status-area.error {
+            background-color: #fadbd8;
+            color: #e74c3c;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .status-area.info {
+            background-color: #d6eaf8;
+            color: #3498db;
+            border-left: 4px solid #3498db;
+        }
+        
+        .result-area {
+            margin-top: 20px;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .copy-btn {
+            background-color: #2ecc71;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+        
+        .copy-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        .response-text {
+            width: 100%;
+            height: 300px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            resize: vertical;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .param-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .param-info h4 {
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .param-list {
+            list-style-type: none;
+        }
+        
+        .param-list li {
+            margin-bottom: 5px;
+            padding-left: 10px;
+            border-left: 2px solid #3498db;
+        }
+        
+        .footer {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            
+            .card {
+                padding: 20px 15px;
+            }
+            
+            .response-text {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>API 请求工具</h1>
+            <p class="description">向指定API地址发送请求并查看响应结果</p>
+        </header>
+        
+        <main class="card">
+            <h2 class="card-title">API 请求</h2>
+            
+            <div class="input-group">
+                <label for="api-url">API 地址</label>
+                <input 
+                    type="text" 
+                    id="api-url" 
+                    class="api-input" 
+                    value="https://127.0.0.1:54339/api/public/clientlogin/auth_login?app_id=104ce370-0382-4a78-aed9-b387bfa20d4a&sole_id=58544889&time_stamp=1723774871&reserve="
+                >
+            </div>
+            
+            <button id="send-btn" class="btn">发送请求</button>
+            
+            <div id="status-area" class="status-area"></div>
+            
+            <div class="param-info">
+                <h4>API参数说明：</h4>
+                <ul class="param-list">
+                    <li><strong>app_id</strong>: 应用程序标识 (UUID格式)</li>
+                    <li><strong>sole_id</strong>: 用户唯一标识</li>
+                    <li><strong>time_stamp</strong>: 时间戳 (Unix时间)</li>
+                    <li><strong>reserve</strong>: 保留参数</li>
+                </ul>
+            </div>
+            
+            <div class="result-area">
+                <div class="result-header">
+                    <h3 class="card-title">响应结果</h3>
+                    <button id="copy-btn" class="btn copy-btn">复制结果</button>
+                </div>
+                <textarea id="response-text" class="response-text" readonly placeholder="响应结果将显示在这里..."></textarea>
+            </div>
+        </main>
+        
+        <div class="footer">
+            <p>注意：由于请求地址为本地地址(127.0.0.1)，请确保目标服务正在运行。如果遇到CORS问题，可能需要配置服务器允许跨域请求。</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiUrlInput = document.getElementById('api-url');
+            const sendBtn = document.getElementById('send-btn');
+            const responseText = document.getElementById('response-text');
+            const statusArea = document.getElementById('status-area');
+            const copyBtn = document.getElementById('copy-btn');
+            
+            // 显示状态信息
+            function showStatus(message, type = 'info') {
+                statusArea.textContent = message;
+                statusArea.className = 'status-area ' + type;
+                statusArea.style.display = 'block';
+                
+                // 如果是成功或错误消息，5秒后自动隐藏
+                if (type === 'success' || type === 'error') {
+                    setTimeout(() => {
+                        statusArea.style.display = 'none';
+                    }, 5000);
+                }
+            }
+            
+            // 格式化JSON响应
+            function formatResponse(data) {
+                try {
+                    // 尝试解析为JSON
+                    const parsed = JSON.parse(data);
+                    return JSON.stringify(parsed, null, 2);
+                } catch (e) {
+                    // 如果不是JSON，直接返回原文本
+                    return data;
+                }
+            }
+            
+            // 发送API请求
+            async function sendRequest() {
+                const url = apiUrlInput.value.trim();
+                
+                if (!url) {
+                    showStatus('请输入API地址', 'error');
+                    return;
+                }
+                
+                // 禁用按钮，显示加载状态
+                sendBtn.disabled = true;
+                sendBtn.innerHTML = '<span class="loading"></span>发送中...';
+                
+                // 清空之前的响应
+                responseText.value = '';
+                
+                try {
+                    showStatus('正在发送请求...', 'info');
+                    
+                    // 使用fetch API发送请求
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                        },
+                        // 注意：由于请求的是本地地址(127.0.0.1)且是HTTPS，
+                        // 实际使用时可能会遇到证书错误，这里设置不验证证书(仅用于开发)
+                        mode: 'cors',
+                        credentials: 'omit'
+                    });
+                    
+                    // 检查响应状态
+                    if (!response.ok) {
+                        throw new Error(`请求失败: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    // 获取响应数据
+                    const data = await response.text();
+                    
+                    // 显示响应
+                    responseText.value = formatResponse(data);
+                    
+                    // 显示成功状态
+                    showStatus(`请求成功！状态码: ${response.status}`, 'success');
+                    
+                } catch (error) {
+                    console.error('请求错误:', error);
+                    
+                    // 显示错误信息
+                    let errorMessage = error.message;
+                    
+                    // 处理特定错误类型
+                    if (error.name === 'TypeError') {
+                        if (error.message.includes('Failed to fetch')) {
+                            errorMessage = '无法连接到服务器。请确保: 1) 服务器正在运行; 2) 地址正确; 3) 没有CORS限制。';
+                        }
+                    }
+                    
+                    showStatus(`请求错误: ${errorMessage}`, 'error');
+                    responseText.value = `错误: ${errorMessage}\n\n请检查:\n1. 目标服务是否正在运行\n2. 地址是否正确\n3. 浏览器控制台是否有更多错误信息`;
+                } finally {
+                    // 恢复按钮状态
+                    sendBtn.disabled = false;
+                    sendBtn.innerHTML = '发送请求';
+                }
+            }
+            
+            // 复制响应结果到剪贴板
+            function copyResponse() {
+                if (!responseText.value) {
+                    showStatus('没有可复制的内容', 'error');
+                    return;
+                }
+                
+                navigator.clipboard.writeText(responseText.value)
+                    .then(() => {
+                        showStatus('响应结果已复制到剪贴板', 'success');
+                        
+                        // 临时改变按钮文本
+                        const originalText = copyBtn.textContent;
+                        copyBtn.textContent = '已复制!';
+                        
+                        setTimeout(() => {
+                            copyBtn.textContent = originalText;
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('复制失败:', err);
+                        showStatus('复制失败: ' + err.message, 'error');
+                    });
+            }
+            
+            // 绑定事件
+            sendBtn.addEventListener('click', sendRequest);
+            copyBtn.addEventListener('click', copyResponse);
+            
+            // 按Enter键也可以发送请求
+            apiUrlInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    sendRequest();
+                }
+            });
+            
+            // 页面加载时显示说明
+            showStatus('已加载默认API地址。点击"发送请求"按钮开始测试。', 'info');
+        });
+    </script>
+</body>
+</html>

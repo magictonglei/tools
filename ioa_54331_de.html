@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOA 544331 回包解密工具</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+            margin-top: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .result-box {
+            background: #e8f4fd;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin-top: 25px;
+            border-radius: 6px;
+            display: none;
+        }
+        .result-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+        .result-content {
+            font-size: 16px;
+            line-height: 1.6;
+            word-break: break-all;
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .algorithm-steps {
+            background: #f8f9fa;
+            border-left: 4px solid #2ecc71;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 6px;
+        }
+        .step {
+            margin-bottom: 15px;
+            padding-left: 15px;
+            position: relative;
+        }
+        .step:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #2ecc71;
+            font-weight: bold;
+        }
+        .reference {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px dashed #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>RC4 解密工具</h1>
+        
+        <div class="input-group">
+            <label for="encryptedData">Base64 加密数据</label>
+            <textarea id="encryptedData" rows="3">44X+FJlGdFOIbKvhD56QVtn3/kWyeEy7tlQ90lw0ORgjk8QmSkcGyS7Im1rhNwP60nJ8gDDv3sFzB1ifSN5twCk8UwnmNoIo6woq6LkR</textarea>
+        </div>
+        
+        <div class="input-group">
+            <label for="mid">设备 MID</label>
+            <input type="text" id="mid" value="4C364B6C588FDE5BE26B38AE86FE459467E0FBD5">
+        </div>
+        
+        <div class="input-group">
+            <label for="timestamp">时间戳</label>
+            <input type="number" id="timestamp" value="1748587925">
+        </div>
+        
+        <button onclick="decryptData()">执行解密</button>
+        
+        <div class="algorithm-steps">
+            <h3>算法实现步骤</h3>
+            <div class="step"><strong>密钥生成：</strong> MID + 静态盐值 → 异或处理（使用时间戳低8位）</div>
+            <div class="step"><strong>RC4 解密：</strong> KSA（密钥调度）→ PRGA（伪随机生成）→ 异或运算</div>
+            <div class="step"><strong>结果转换：</strong> 字节数组 → UTF-8 字符串</div>
+        </div>
+        
+        <div id="resultContainer" class="result-box">
+            <div class="result-title">解密结果</div>
+            <div id="decryptedText" class="result-content"></div>
+        </div>
+        
+        <div class="reference">
+            算法参考：RC4 流加密算法 (Rivest Cipher 4) [1,3](@ref)
+        </div>
+    </div>
+
+    <script>
+        // 常量定义（与Java代码一致）
+        const API_RESP_RESULT_ENCRYPT_STATIC_SALT = "01DFFD1B4A5C46808C8FA03C95F00BD5";
+        const DEFAULT_KEY = "DF1FC6A608EF47cf8CD22658BFAAFD35";
+
+        /**
+         * 生成RC4密钥（核心逻辑）
+         * @param {string} mid - 设备MID
+         * @param {number} timestamp - 时间戳
+         * @returns {Uint8Array} - 密钥字节数组
+         */
+        function generateRC4Key(mid, timestamp) {
+            // 1. 计算盐值（取时间戳低8位）
+            const salt = timestamp & 0xFF;
+            
+            // 2. 拼接密钥（MID + 静态盐）
+            let combinedKey = mid + API_RESP_RESULT_ENCRYPT_STATIC_SALT;
+            
+            // 3. 空密钥处理
+            if (!combinedKey || combinedKey.length === 0) {
+                combinedKey = DEFAULT_KEY;
+            }
+            
+            // 4. 字符串转字节数组（ISO-8859-1编码）
+            const encoder = new TextEncoder();
+            let keyBytes = encoder.encode(combinedKey);
+            
+            // 5. 对每个字节进行异或操作
+            for (let i = 0; i < keyBytes.length; i++) {
+                keyBytes[i] = keyBytes[i] ^ salt;
+            }
+            
+            return keyBytes;
+        }
+
+        /**
+         * RC4解密核心算法
+         * @param {Uint8Array} encryptedData - 加密数据（字节数组）
+         * @param {Uint8Array} key - 密钥（字节数组）
+         * @returns {Uint8Array} - 解密后的字节数组
+         */
+        function rc4Decrypt(encryptedData, key) {
+            // 1. 初始化S盒（256字节）
+            const s = new Uint8Array(256);
+            for (let i = 0; i < 256; i++) {
+                s[i] = i;
+            }
+            
+            // 2. 密钥调度算法（KSA）
+            let j = 0;
+            for (let i = 0; i < 256; i++) {
+                j = (j + s[i] + key[i % key.length]) % 256;
+                // 交换s[i]和s[j]
+                [s[i], s[j]] = [s[j], s[i]];
+            }
+            
+            // 3. 伪随机生成算法（PRGA）
+            let i = 0;
+            j = 0;
+            const decryptedData = new Uint8Array(encryptedData.length);
+            
+            for (let k = 0; k < encryptedData.length; k++) {
+                i = (i + 1) % 256;
+                j = (j + s[i]) % 256;
+                // 交换s[i]和s[j]
+                [s[i], s[j]] = [s[j], s[i]];
+                
+                // 计算密钥流字节
+                const t = (s[i] + s[j]) % 256;
+                const keyStreamByte = s[t];
+                
+                // 异或运算解密
+                decryptedData[k] = encryptedData[k] ^ keyStreamByte;
+            }
+            
+            return decryptedData;
+        }
+
+        /**
+         * 完整解密流程
+         */
+        function decryptData() {
+            // 1. 获取输入值
+            const encryptedBase64 = document.getElementById('encryptedData').value;
+            const mid = document.getElementById('mid').value;
+            const timestamp = parseInt(document.getElementById('timestamp').value);
+            
+            // 2. Base64解码
+            const binaryString = atob(encryptedBase64);
+            const encryptedBytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                encryptedBytes[i] = binaryString.charCodeAt(i);
+            }
+            
+            // 3. 生成密钥
+            const key = generateRC4Key(mid, timestamp);
+            
+            // 4. 执行RC4解密
+            const decryptedBytes = rc4Decrypt(encryptedBytes, key);
+            
+            // 5. 字节数组转文本（UTF-8）
+            const decoder = new TextDecoder('utf-8');
+            const decryptedText = decoder.decode(decryptedBytes);
+            
+            // 6. 显示结果
+            document.getElementById('decryptedText').textContent = decryptedText;
+            document.getElementById('resultContainer').style.display = 'block';
+            
+            // 控制台输出密钥信息（实际使用中应移除）
+            console.log("生成密钥信息：", {
+                mid: mid,
+                timestamp: timestamp,
+                salt: timestamp & 0xFF,
+                keyLength: key.length,
+                firstKeyBytes: Array.from(key.slice(0, 16))
+            });
+        }
+
+        // 页面加载后自动执行解密（可选）
+        window.onload = function() {
+            decryptData();
+        };
+    </script>
+</body>
+</html>
