@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DR Report Test Tool</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007acc;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+        }
+        .test-case {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .test-case h3 {
+            margin-top: 0;
+            color: #007acc;
+        }
+        .test-case p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .json-input {
+            width: 100%;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+            background-color: #fff;
+        }
+        .json-data {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+        }
+        button {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px 5px 5px 0;
+        }
+        button:hover {
+            background-color: #005a9e;
+        }
+        button:active {
+            background-color: #004275;
+        }
+        .button-secondary {
+            background-color: #6c757d;
+        }
+        .button-secondary:hover {
+            background-color: #5a6268;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .result.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .result.info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .all-tests {
+            background-color: #28a745;
+            margin: 20px 0;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        .all-tests:hover {
+            background-color: #218838;
+        }
+        .custom-test {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .custom-test h3 {
+            color: #856404;
+            margin-top: 0;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px 0;
+            font-weight: bold;
+            color: #333;
+        }
+        .button-group {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DR Report 测试工具</h1>
+        <p>测试地址：http://127.0.0.1:54331/dr_report</p>
+        
+        <!-- 自定义测试区域 -->
+        <div class="custom-test">
+            <h3>🔧 自定义测试</h3>
+            <p>在此区域可以手动修改JSON数据，进行灵活的测试</p>
+            
+            <label for="custom-cmd">命令字 (cmd):</label>
+            <input type="text" id="custom-cmd" value="5234" style="width: 100%; padding: 8px; font-family: 'Courier New', monospace;">
+            
+            <label for="custom-report">上报内容 (report):</label>
+            <textarea id="custom-report" class="json-input" placeholder="输入JSON格式的report数据">{
+  "_01_monitorID": 100,
+  "_02_policyID": 200,
+  "_03_action": 1,
+  "_04_operator": "admin",
+  "_05_data1": "test_data_1",
+  "_06_data2": "test_data_2",
+  "_07_value": "test_value"
+}</textarea>
+            
+            <div class="button-group">
+                <button onclick="testCustom()">执行自定义测试</button>
+                <button class="button-secondary" onclick="generateCustomJson()">生成JSON</button>
+                <button class="button-secondary" onclick="resetCustom()">重置为默认</button>
+            </div>
+            <div id="custom-result" class="result" style="display:none;"></div>
+        </div>
+        
+        <button class="all-tests" onclick="runAllTests()">运行所有预设测试</button>
+        
+        <div id="test-results"></div>
+        
+        <h2>单项测试（可编辑）</h2>
+        
+        <!-- 正常场景测试 -->
+        <div class="test-case">
+            <h3>测试1：正常上报（cmd=5234）</h3>
+            <p>描述：正确的JSON格式，符合所有约束条件</p>
+            <label>命令字:</label>
+            <input type="text" id="cmd-1" value="5234" style="width: 200px; padding: 5px; font-family: 'Courier New', monospace;">
+            <label>上报内容 (report):</label>
+            <textarea id="json-1" class="json-input">{
+  "_01_monitorID": 100,
+  "_02_policyID": 200,
+  "_03_action": 1,
+  "_04_operator": "admin",
+  "_05_data1": "test_data_1",
+  "_06_data2": "test_data_2",
+  "_07_value": "test_value"
+}</textarea>
+            <div class="button-group">
+                <button onclick="testWithCustomData(1)">执行测试1（使用自定义数据）</button>
+                <button class="button-secondary" onclick="resetTestData(1)">重置为预设</button>
+            </div>
+            <div id="result1" class="result" style="display:none;"></div>
+        </div>
+        
+        <!-- 测试2：缺少cmd字段 -->
+        <div class="test-case">
+            <h3>测试2：缺少cmd字段</h3>
+            <p>描述：JSON中缺少必需的cmd字段</p>
+            <label>命令字:</label>
+            <input type="text" id="cmd-2" value="" style="width: 200px; padding: 5px; font-family: 'Courier New', monospace;">
+            <label>上报内容 (report):</label>
+            <textarea id="json-2" class="json-input">{
+  "_01_monitorID": 100,
+  "_02_policyID": 200
+}</textarea>
+            <div class="button-group">
+                <button onclick="testWithCustomData(2)">执行测试2（使用自定义数据）</button>
+                <button class="button-secondary" onclick="resetTestData(2)">重置为预设</button>
+            </div>
+            <div id="result2" class="result" style="display:none;"></div>
+        </div>
+        
+        <!-- 测试3：cmd类型错误 -->
+        <div class="test-case">
+            <h3>测试3：cmd类型错误（应为int）</h3>
+            <p>描述：cmd字段类型不是整数</p>
+            <label>命令字:</label>
+            <input type="text" id="cmd-3" value="\"5234\"" style="width: 200px; padding: 5px; font-family: 'Courier New', monospace;">
+            <label>上报内容 (report):</label>
+            <textarea id="json-3" class="json-input">{
+  "_01_monitorID": 100
+}</textarea>
+            <div class="button-group">
+                <button onclick="testWithCustomData(3)">执行测试3（使用自定义数据）</button>
+                <button class="button-secondary" onclick="resetTestData(3)">重置为预设</button>
+            </div>
+            <div id="result3" class="result" style="display:none;"></div>
+        </div>
+        
+        <!-- 测试4：缺少report字段 -->
+        <div class="test-case">
+            <h3>测试4：缺少report字段</h3>
+            <p>描述：JSON中缺少必需的report字段</p>
+            <label>命令字:</label>
+            <input type="text" id="cmd-4" value="5234" style="width: 200px; padding: 5px; font-family: 'Courier New', monospace;">
+            <label>上报内容 (report):</label>
+            <textarea id="json-4" class="json-input"></textarea>
+            <div class="button-group">
+                <button onclick="testWithCustomData(4)">执行测试4（使用自定义数据）</button>
+                <button class="button-secondary" onclick="resetTestData(4)">重置为预设</button>
+            </div>
+            <div id="result4" class="result" style="display:none;"></div>
+        </div>
+        
+        <!-- 测试5：report不是对象 -->
+        <div class="test-case">
+            <h3>测试5：report不是对象</h3>
+            <p>描述：report字段类型不是对象</p>
+            <label>命令字:</label>
+            <input type="text" id="cmd-5" value="5234" style="width: 200px; padding: 5px; font-family: 'Courier New', monospace;">
+            <label>上报内容 (report):</label>
+            <textarea id="json-5" class="json-input">\"not_an_object\"</textarea>
+            <div class="button-group">
+                <button onclick="testWithCustomData(5)">执行测试5（使用自定义数据）</button>
+                <button class="button-secondary" onclick="resetTestData(5)">重置为预设</button>
+            </div>
+            <div id="result5" class="result" style="display:none;"></div>
+        </div>
+        
+        <!-- 测试6：report为空 -->
+        <div class="test-case">
+            <h3>测试6：report成员为空</h3>
+            <p>描述：report对象中没有成员</p>
+            <label>命令字:</label>
+            <input type="text" id="cmd-6" value="5234" style="width: 200px; padding: 5px; font-family: 'Courier New', monospace;">
+            <label>上报内容 (report):</label>
+            <textarea id="json-6" class="json-input">{}</textarea>
+            <div class="button-group">
+                <button onclick="testWithCustomData(6)">执行测试6（使用自定义数据）</button>
+                <button class="button-secondary" onclick="resetTestData(6)">重置为预设</button>
+            </div>
+            <div id="result6" class="result" style="display:none;"></div>
+        </div>
+        
+        <!-- 测试7：Key长度不足 -->
+        <div class="test-case">
+            <h3>测试7：Key长度不足（<=4）</h3>
+            <p>描述：Key长度必须大于4个字符</p>
+            <label>命令字:</label>
+            <input type="text" id="cmd-7" value="5234" style="width: 200px; padding: 5px; font-family: 'Courier New', monospace;">
+            <label>上报内容 (report):</label>
+            <textarea id="json-7" class="json-input">{
+  "_01_a": 1,
+  "_02_b": 2,
+  "_abc": 3
+}</textarea>
+            <div class="button-group">
+                <button onclick="testWithCustomData(7)">执行测试7（使用自定义数据）</button>
+                <button class="button-secondary" onclick="resetTestData(7)">重置为预设</button>
+            </div>
+            <div id="result7" class="result" style="display:none;"></div>
+        </div>
+        
+        <!-- 测试8：Key格式不匹配 -->
+        <div class="test-case">
+            <h3>测试8：Key格式不匹配（不是_xx_格式）</h3>
+            <p>描述：Key必须符合 _xx_ 格式</p>
+            <label>命令字:</label>
+            <input type="text" id="cmd-8" value="5234" style="width: 200px; padding: 5px; font-family: 'Courier New', monospace;">
+            <label>上报内容 (report):</label>
+            <textarea id="json-8" class="json-input">{
+  "_01_a": 1,
+  "__02_b": 2
+}</textarea>
+            <div class="button-group">
+                <button onclick="testWithCustomData(8)">执行测试8（使用自定义数据）</button>
+                <button class="button-secondary" onclick="resetTestData(8)">重置为预设</button>
+            </div>
+            <div id="result8" class="result" style="display:none;"></div>
+        </div>
+        
+        <!-- 测试9：Key位置1-2不是数字 -->
+        <div class="test-case">
+            <h3>测试9：Key位置1-2不是数字</h3>
+            <p>描述：Key的第1-2个字符必须是数字</p>
+            <label>命令字:</label>
+            <input type="text" id="cmd-9" value="5234" style="width: 200px; padding: 5px; font-family: 'Courier New', monospace;">
+            <label>上报内容 (report):</label>
+            <textarea id="json-9" class="json-input">{
+  "_01_a": 1,
+  "_0a_b": 2
+}</textarea>
+            <div class="button-group">
+                <button onclick="testWithCustomData(9)">执行测试9（使用自定义数据）</button>
+                <button class="button-secondary" onclick="resetTestData(9)">重置为预设</button>
+            </div>
+            <div id="result9" class="result" style="display:none;"></div>
+        </div>
+        
+        <!-- 测试10：Value类型不支持 -->
+        <div class="test-case">
+            <h3>测试10：Value类型不支持（支持int和string）</h3>
+            <p>描述：Value必须是int或string类型</p>
+            <label>命令字:</label>
+            <input type="text" id="cmd-10" value="5234" style="width: 200px; padding: 5px; font-family: 'Courier New', monospace;">
+            <label>上报内容 (report):</label>
+            <textarea id="json-10" class="json-input">{
+  "_01_a": 1,
+  "_02_b": true,
+  "_03_c": "string_value"
+}</textarea>
+            <div class="button-group">
+                <button onclick="testWithCustomData(10)">执行测试10（使用自定义数据）</button>
+                <button class="button-secondary" onclick="resetTestData(10)">重置为预设</button>
+            </div>
+            <div id="result10" class="result" style="display:none;"></div>
+        </div>
+        
+        <!-- 测试11：不支持的命令字 -->
+        <div class="test-case">
+            <h3>测试11：不支持的命令字</h3>
+            <p>描述：命令字不在支持列表中</p>
+            <label>命令字:</label>
+            <input type="text" id="cmd-11" value="9999" style="width: 200px; padding: 5px; font-family: 'Courier New', monospace;">
+            <label>上报内容 (report):</label>
+            <textarea id="json-11" class="json-input">{
+  "_01_a": 1,
+  "_02_b": 2
+}</textarea>
+            <div class="button-group">
+                <button onclick="testWithCustomData(11)">执行测试11（使用自定义数据）</button>
+                <button class="button-secondary" onclick="resetTestData(11)">重置为预设</button>
+            </div>
+            <div id="result11" class="result" style="display:none;"></div>
+        </div>
+        
+        <!-- 测试12：无效JSON格式 -->
+        <div class="test-case">
+            <h3>测试12：无效JSON格式</h3>
+            <p>描述：JSON格式错误，无法解析</p>
+            <label>命令字:</label>
+            <input type="text" id="cmd-12" value="5234" style="width: 200px; padding: 5px; font-family: 'Courier New', monospace;">
+            <label>上报内容 (report):</label>
+            <textarea id="json-12" class="json-input">{
+  "_01_a": 1,
+  "_02_b": 2,
+}</textarea>
+            <div class="button-group">
+                <button onclick="testWithCustomData(12)">执行测试12（使用自定义数据）</button>
+                <button class="button-secondary" onclick="resetTestData(12)">重置为预设</button>
+            </div>
+            <div id="result12" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // 预设测试数据
+        const presetData = {
+            1: { cmd: '5234', report: '{\n  "_01_monitorID": 100,\n  "_02_policyID": 200,\n  "_03_action": 1,\n  "_04_operator": "admin",\n  "_05_data1": "test_data_1",\n  "_06_data2": "test_data_2",\n  "_07_value": "test_value"\n}' },
+            2: { cmd: '', report: '{\n  "_01_monitorID": 100,\n  "_02_policyID": 200\n}' },
+            3: { cmd: '"5234"', report: '{\n  "_01_monitorID": 100\n}' },
+            4: { cmd: '5234', report: '' },
+            5: { cmd: '5234', report: '"not_an_object"' },
+            6: { cmd: '5234', report: '{}' },
+            7: { cmd: '5234', report: '{\n  "_01_a": 1,\n  "_02_b": 2,\n  "_abc": 3\n}' },
+            8: { cmd: '5234', report: '{\n  "_01_a": 1,\n  "__02_b": 2\n}' },
+            9: { cmd: '5234', report: '{\n  "_01_a": 1,\n  "_0a_b": 2\n}' },
+            10: { cmd: '5234', report: '{\n  "_01_a": 1,\n  "_02_b": true,\n  "_03_c": "string_value"\n}' },
+            11: { cmd: '9999', report: '{\n  "_01_a": 1,\n  "_02_b": 2\n}' },
+            12: { cmd: '5234', report: '{\n  "_01_a": 1,\n  "_02_b": 2,\n}' }
+        };
+
+        // 发送POST请求的函数
+        function sendPostRequest(jsonData, resultDivId, testName) {
+            const xhr = new XMLHttpRequest();
+            const resultDiv = document.getElementById(resultDivId);
+            
+            xhr.open('POST', 'http://127.0.0.1:54331/dr_report', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    const response = xhr.responseText;
+                    let resultClass = 'result info';
+                    let message = '';
+                    
+                    try {
+                        const jsonResponse = JSON.parse(response);
+                        if (jsonResponse.error_code === 0) {
+                            resultClass = 'result success';
+                            message = '✓ ' + testName + ' 成功\n';
+                        } else {
+                            resultClass = 'result error';
+                            message = '✗ ' + testName + ' 失败\n';
+                        }
+                        message += '错误码: ' + jsonResponse.error_code + '\n';
+                        message += '消息: ' + jsonResponse.msg;
+                    } catch (e) {
+                        resultClass = 'result error';
+                        message = '✗ ' + testName + ' 失败\n';
+                        message += '响应: ' + response + '\n';
+                        message += '异常: ' + e.message;
+                    }
+                    
+                    resultDiv.className = resultClass;
+                    resultDiv.textContent = message;
+                    resultDiv.style.display = 'block';
+                }
+            };
+            
+            xhr.onerror = function() {
+                const resultDiv = document.getElementById(resultDivId);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '✗ ' + testName + ' 失败\n网络错误: 无法连接到服务器\n请确保服务运行在 http://127.0.0.1:54331';
+                resultDiv.style.display = 'block';
+            };
+            
+            xhr.send(jsonData);
+            
+            // 显示加载中
+            resultDiv.className = 'result info';
+            resultDiv.textContent = '正在发送请求...';
+            resultDiv.style.display = 'block';
+        }
+
+        // 使用自定义数据测试（指定测试编号）
+        function testWithCustomData(testNumber) {
+            const cmd = document.getElementById('cmd-' + testNumber).value;
+            const report = document.getElementById('json-' + testNumber).value;
+            const testName = '测试' + testNumber + '（自定义数据）';
+            
+            let jsonData;
+            if (cmd === '') {
+                // 没有cmd字段
+                jsonData = JSON.stringify({ report: report ? JSON.parse(report) : {} }, null, 0);
+            } else {
+                // 有cmd字段
+                jsonData = JSON.stringify({ 
+                    cmd: cmd.startsWith('"') ? JSON.parse(cmd) : parseInt(cmd), 
+                    report: report ? JSON.parse(report) : {} 
+                }, null, 0);
+            }
+            
+            sendPostRequest(jsonData, 'result' + testNumber, testName);
+        }
+
+        // 重置测试数据为预设值
+        function resetTestData(testNumber) {
+            const preset = presetData[testNumber];
+            if (preset) {
+                document.getElementById('cmd-' + testNumber).value = preset.cmd;
+                document.getElementById('json-' + testNumber).value = preset.report;
+                document.getElementById('result' + testNumber).style.display = 'none';
+            }
+        }
+
+        // 自定义测试功能
+        function testCustom() {
+            const cmd = document.getElementById('custom-cmd').value;
+            const report = document.getElementById('custom-report').value;
+            
+            try {
+                let jsonData;
+                if (cmd.trim() === '') {
+                    jsonData = JSON.stringify({ report: JSON.parse(report) }, null, 0);
+                } else {
+                    jsonData = JSON.stringify({ 
+                        cmd: isNaN(cmd) ? JSON.parse(cmd) : parseInt(cmd), 
+                        report: JSON.parse(report) 
+                    }, null, 0);
+                }
+                sendPostRequest(jsonData, 'custom-result', '自定义测试');
+            } catch (e) {
+                const resultDiv = document.getElementById('custom-result');
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '✗ JSON格式错误\n' + e.message;
+                resultDiv.style.display = 'block';
+            }
+        }
+
+        // 生成JSON
+        function generateCustomJson() {
+            const cmd = document.getElementById('custom-cmd').value;
+            const report = document.getElementById('custom-report').value;
+            
+            try {
+                let jsonObj;
+                if (cmd.trim() === '') {
+                    jsonObj = { report: JSON.parse(report) };
+                } else {
+                    jsonObj = { 
+                        cmd: isNaN(cmd) ? JSON.parse(cmd) : parseInt(cmd), 
+                        report: JSON.parse(report) 
+                    };
+                }
+                
+                const formattedJson = JSON.stringify(jsonObj, null, 2);
+                document.getElementById('custom-result').className = 'result info';
+                document.getElementById('custom-result').textContent = '生成的JSON:\n' + formattedJson;
+                document.getElementById('custom-result').style.display = 'block';
+            } catch (e) {
+                const resultDiv = document.getElementById('custom-result');
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '✗ JSON格式错误\n' + e.message;
+                resultDiv.style.display = 'block';
+            }
+        }
+
+        // 重置自定义区域
+        function resetCustom() {
+            document.getElementById('custom-cmd').value = '5234';
+            document.getElementById('custom-report').value = '{\n  "_01_monitorID": 100,\n  "_02_policyID": 200,\n  "_03_action": 1,\n  "_04_operator": "admin",\n  "_05_data1": "test_data_1",\n  "_06_data2": "test_data_2",\n  "_07_value": "test_value"\n}';
+            document.getElementById('custom-result').style.display = 'none';
+        }
+
+        // 预设的测试函数（保持不变）
+        function testNormalCase() {
+            const jsonData = JSON.stringify({
+                "cmd": 5234,
+                "report": {
+                    "_01_monitorID": 100,
+                    "_02_policyID": 200,
+                    "_03_action": 1,
+                    "_04_operator": "admin",
+                    "_05_data1": "test_data_1",
+                    "_06_data2": "test_data_2",
+                    "_07_value": "test_value"
+                }
+            }, null, 0);
+            sendPostRequest(jsonData, 'result1', '正常上报');
+        }
+        
+        function testMissingCmd() {
+            const jsonData = JSON.stringify({
+                "report": {
+                    "_01_monitorID": 100,
+                    "_02_policyID": 200
+                }
+            }, null, 0);
+            sendPostRequest(jsonData, 'result2', '缺少cmd字段');
+        }
+        
+        function testInvalidCmdType() {
+            const jsonData = JSON.stringify({
+                "cmd": "5234",
+                "report": {
+                    "_01_monitorID": 100
+                }
+            }, null, 0);
+            sendPostRequest(jsonData, 'result3', 'cmd类型错误');
+        }
+        
+        function testMissingReport() {
+            const jsonData = JSON.stringify({
+                "cmd": 5234
+            }, null, 0);
+            sendPostRequest(jsonData, 'result4', '缺少report字段');
+        }
+        
+        function testInvalidReportType() {
+            const jsonData = JSON.stringify({
+                "cmd": 5234,
+                "report": "not_an_object"
+            }, null, 0);
+            sendPostRequest(jsonData, 'result5', 'report不是对象');
+        }
+        
+        function testEmptyReport() {
+            const jsonData = JSON.stringify({
+                "cmd": 5234,
+                "report": {}
+            }, null, 0);
+            sendPostRequest(jsonData, 'result6', 'report为空');
+        }
+        
+        function testShortKey() {
+            const jsonData = JSON.stringify({
+                "cmd": 5234,
+                "report": {
+                    "_01_a": 1,
+                    "_02_b": 2,
+                    "_abc": 3
+                }
+            }, null, 0);
+            sendPostRequest(jsonData, 'result7', 'Key长度不足');
+        }
+        
+        function testInvalidKeyFormat() {
+            const jsonData = JSON.stringify({
+                "cmd": 5234,
+                "report": {
+                    "_01_a": 1,
+                    "__02_b": 2
+                }
+            }, null, 0);
+            sendPostRequest(jsonData, 'result8', 'Key格式不匹配');
+        }
+        
+        function testNonDigitKey() {
+            const jsonData = JSON.stringify({
+                "cmd": 5234,
+                "report": {
+                    "_01_a": 1,
+                    "_0a_b": 2
+                }
+            }, null, 0);
+            sendPostRequest(jsonData, 'result9', 'Key位置1-2不是数字');
+        }
+        
+        function testInvalidValueType() {
+            const jsonData = JSON.stringify({
+                "cmd": 5234,
+                "report": {
+                    "_01_a": 1,
+                    "_02_b": true,
+                    "_03_c": "string_value"
+                }
+            }, null, 0);
+            sendPostRequest(jsonData, 'result10', 'Value类型不支持');
+        }
+        
+        function testUnsupportedCmd() {
+            const jsonData = JSON.stringify({
+                "cmd": 9999,
+                "report": {
+                    "_01_a": 1,
+                    "_02_b": 2
+                }
+            }, null, 0);
+            sendPostRequest(jsonData, 'result11', '不支持的命令字');
+        }
+        
+        function testInvalidJson() {
+            const jsonData = '{"cmd": 5234, "report": {"_01_a": 1, "_02_b": 2,}}';
+            sendPostRequest(jsonData, 'result12', '无效JSON格式');
+        }
+        
+        function runAllTests() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<h3>批量测试结果</h3>';
+            
+            setTimeout(testNormalCase, 100);
+            setTimeout(testMissingCmd, 300);
+            setTimeout(testInvalidCmdType, 500);
+            setTimeout(testMissingReport, 700);
+            setTimeout(testInvalidReportType, 900);
+            setTimeout(testEmptyReport, 1100);
+            setTimeout(testShortKey, 1300);
+            setTimeout(testInvalidKeyFormat, 1500);
+            setTimeout(testNonDigitKey, 1700);
+            setTimeout(testInvalidValueType, 1900);
+            setTimeout(testUnsupportedCmd, 2100);
+            setTimeout(testInvalidJson, 2300);
+            
+            resultsDiv.innerHTML += '<p>正在执行所有测试...</p>';
+        }
+
+        // 页面加载完成后初始化
+        window.onload = function() {
+            // 为所有输入框添加保存功能（可选）
+            const inputs = document.querySelectorAll('input, textarea');
+            inputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    console.log('数据已修改:', this.id);
+                });
+            });
+        };
+    </script>
+</body>
+</html>
